@@ -1275,7 +1275,7 @@ bool TebOptimalPlanner::isTrajectoryFeasible(base_local_planner::CostmapModel* c
     {
       if (visualization_)
       {
-        visualization_->publishInfeasibleRobotPose(teb().Pose(i), *robot_model_);
+        visualization_->publishInfeasibleRobotPose(teb().Pose(i), footprint_spec);
       }
       return false;
     }

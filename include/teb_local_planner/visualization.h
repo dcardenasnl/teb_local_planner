@@ -139,14 +139,25 @@ public:
   void publishRobotFootprintModel(const PoseSE2& current_pose, const BaseRobotFootprintModel& robot_model, const std::string& ns = "RobotFootprintModel",
                                   const std_msgs::ColorRGBA& color = toColorMsg(0.5, 0.0, 0.8, 0.0));
 
+  void publishRobotFootprint(const PoseSE2& current_pose, const std::vector<geometry_msgs::Point>& footprint,
+                             const std::string& ns, const std_msgs::ColorRGBA &color);
+
   /**
-   * @brief Publish the robot footprints related to infeasible poses
+   * @brief Publish the robot footprint model at an infeasible pose
    *
-   * @param current_pose Current pose of the robot
+   * @param infeasible_pose Infeasible pose to visualize
    * @param robot_model Subclass of BaseRobotFootprintModel
    */
-  void publishInfeasibleRobotPose(const PoseSE2& current_pose, const BaseRobotFootprintModel& robot_model);
-  
+  void publishInfeasibleRobotPose(const PoseSE2& infeasible_pose, const BaseRobotFootprintModel& robot_model);
+
+  /**
+   * @brief Alternative version that publishes the actual robot footprint instead of the footprint model
+   *
+   * @param infeasible_pose Infeasible pose to visualize
+   * @param footprint Actual robot footprint
+   */
+  void publishInfeasibleRobotPose(const PoseSE2& infeasible_pose, const std::vector<geometry_msgs::Point>& footprint);
+
   /**
    * @brief Publish obstacle positions to the ros topic \e ../../teb_markers
    * @todo Move filling of the marker message to polygon class in order to avoid checking types.
