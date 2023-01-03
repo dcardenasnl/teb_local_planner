@@ -89,6 +89,9 @@ void TebLocalPlannerROS::reconfigureCB(TebLocalPlannerReconfigureConfig& config,
 
 void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costmap_2d::Costmap2DROS* costmap_ros)
 {
+  ROS_INFO("************");
+  ROS_INFO("* TEB AMTC *");
+  ROS_INFO("************");
   // check if the plugin is already initialized
   if(!initialized_)
   {	
@@ -227,10 +230,11 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   geometry_msgs::TwistStamped dummy_velocity, cmd_vel_stamped;
   uint32_t outcome = computeVelocityCommands(dummy_pose, dummy_velocity, cmd_vel_stamped, dummy_message);
   cmd_vel = cmd_vel_stamped.twist;
+  // ROS_INFO("cmd_vel: speed=%.3f, steer_angle=%.3f", cmd_vel.linear.x, cmd_vel.angular.z);
   return outcome == mbf_msgs::ExePathResult::SUCCESS;
 }
 
-uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseStamped& pose,
+uint32_t TebLocalPlannerROS::ScomputeVelocityCommands(const geometry_msgs::PoseStamped& pose,
                                                      const geometry_msgs::TwistStamped& velocity,
                                                      geometry_msgs::TwistStamped &cmd_vel,
                                                      std::string &message)
@@ -463,7 +467,9 @@ bool TebLocalPlannerROS::isGoalReached()
 {
   if (goal_reached_)
   {
-    ROS_INFO("GOAL Reached!");
+    ROS_INFO("*****************");
+    ROS_INFO("* GOAL Reached! *");
+    ROS_INFO("*****************");
     planner_->clearPlanner();
     return true;
   }
