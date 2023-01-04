@@ -379,6 +379,7 @@ if ( printErrorWhenNotInitialized() )
   marker.id = 0;
   marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.orientation.w = 1;
   
   // Iterate through teb pose sequence
   for( TebOptPlannerContainer::const_iterator it_teb = teb_planner.begin(); it_teb != teb_planner.end(); ++it_teb )

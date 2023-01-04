@@ -303,7 +303,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
     return mbf_msgs::ExePathResult::SUCCESS;
   }
 
-  publishGoalInfo(goal_dist, delta_orient);
+  publishGoalInfo(goal_dist, delta_orient, base_odom);
 
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx);
@@ -1008,7 +1008,7 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::PoseSta
             }
             time_last_oscillation_ = ros::Time::now();  
             planner_->setPreferredTurningDir(last_preferred_rotdir_);
-            ROS_INFO_THROTTLE(1.0, "AMTC: Detecting oscilation!!");
+            ROS_INFO_THROTTLE(1.0, "AMTC: Detecting Change of direction!!");
         }
         else if (!recently_oscillated && last_preferred_rotdir_ != RotType::none) // clear recovery behavior
         {

@@ -391,7 +391,7 @@ protected:
   
   void configureBackupModes(std::vector<geometry_msgs::PoseStamped>& transformed_plan,  int& goal_idx);
 
-  void publishGoalInfo(const double goal_dist, const double yaw_dist)
+  void publishGoalInfo(const double goal_dist, const double yaw_dist, nav_msgs::Odometry& odom)
   {
     GoalInfo msg;
     msg.xy_dist = goal_dist;
@@ -399,6 +399,9 @@ protected:
 
     msg.xy_tolerance = cfg_.goal_tolerance.xy_goal_tolerance;
     msg.yaw_tolerance = cfg_.goal_tolerance.yaw_goal_tolerance;
+
+    msg.odom_speed = odom.twist.twist.linear.x;
+    msg.odom_steering = odom.twist.twist.linear.z;
 
     goal_info_pub.publish(msg);
     

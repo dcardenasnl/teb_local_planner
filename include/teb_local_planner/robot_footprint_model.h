@@ -392,6 +392,7 @@ public:
       marker1.pose.position.x += front_offset_*dir.x();
       marker1.pose.position.y += front_offset_*dir.y();
       marker1.scale.x = marker1.scale.y = 2*front_radius_; // scale = diameter
+      marker1.pose.orientation.w = 1;
 //       marker1.scale.z = 0.05;
       marker1.color = color;
 
@@ -404,6 +405,7 @@ public:
       current_pose.toPoseMsg(marker2.pose);
       marker2.pose.position.x -= rear_offset_*dir.x();
       marker2.pose.position.y -= rear_offset_*dir.y();
+      marker2.pose.orientation.w = 1;
       marker2.scale.x = marker2.scale.y = 2*rear_radius_; // scale = diameter
 //       marker2.scale.z = 0.05;
       marker2.color = color;
@@ -545,7 +547,7 @@ public:
     line_end_world.z = 0;
     marker.points.push_back(line_end_world);
 
-    marker.scale.x = 0.025; 
+    marker.scale.x = marker_line_width; 
     marker.color = color;    
 
     if (min_obstacle_dist_ <= 0)
@@ -557,7 +559,7 @@ public:
     markers.push_back(visualization_msgs::Marker());
     visualization_msgs::Marker& marker2 = markers.back();
     marker2.type = visualization_msgs::Marker::LINE_STRIP;
-    marker2.scale.x = 0.025; 
+    marker2.scale.x = marker_line_width; 
     marker2.color = color;
     current_pose.toPoseMsg(marker2.pose); // all points are transformed into the robot frame!
 
@@ -620,6 +622,7 @@ private:
   Eigen::Vector2d line_start_;
   Eigen::Vector2d line_end_;
   const double min_obstacle_dist_ = 0.0;
+  const double marker_line_width = 0.2;
   
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -716,7 +719,7 @@ public:
     point.z = 0;
     marker.points.push_back(point);
 
-    marker.scale.x = 0.025; 
+    marker.scale.x = marker_line_width; 
     marker.color = color;
 
   }
@@ -766,6 +769,7 @@ private:
   }
 
   Point2dContainer vertices_;
+  const double marker_line_width = 0.2;
   
 };
 
