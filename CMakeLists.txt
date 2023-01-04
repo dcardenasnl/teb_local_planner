@@ -106,6 +106,7 @@ add_message_files(
   TrajectoryPointMsg.msg
   TrajectoryMsg.msg
   FeedbackMsg.msg
+  GoalInfo.msg
 )
 
 ## Generate services in the 'srv' folder

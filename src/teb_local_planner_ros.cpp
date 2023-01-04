@@ -85,6 +85,8 @@ void TebLocalPlannerROS::reconfigureCB(TebLocalPlannerReconfigureConfig& config,
   // create robot footprint/contour model for optimization
   RobotFootprintModelPtr robot_model = getRobotFootprintFromParamServer(nh, cfg_);
   planner_->updateRobotModel(robot_model);
+
+  goal_info_pub = nh.advertise<GoalInfo>("goal_info", 1);
 }
 
 void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costmap_2d::Costmap2DROS* costmap_ros)
@@ -289,8 +291,9 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   tf2::doTransform(global_plan_.back(), global_goal, tf_plan_to_global);
   double dx = global_goal.pose.position.x - robot_pose_.x();
   double dy = global_goal.pose.position.y - robot_pose_.y();
+  const double goal_dist = fabs(std::sqrt(dx*dx+dy*dy));
   double delta_orient = g2o::normalize_theta( tf2::getYaw(global_goal.pose.orientation) - robot_pose_.theta() );
-  if(fabs(std::sqrt(dx*dx+dy*dy)) < cfg_.goal_tolerance.xy_goal_tolerance
+  if(goal_dist < cfg_.goal_tolerance.xy_goal_tolerance
     && fabs(delta_orient) < cfg_.goal_tolerance.yaw_goal_tolerance
     && (!cfg_.goal_tolerance.complete_global_plan || via_points_.size() == 0)
     && (base_local_planner::stopped(base_odom, cfg_.goal_tolerance.theta_stopped_vel, cfg_.goal_tolerance.trans_stopped_vel)
@@ -299,6 +302,8 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
     goal_reached_ = true;
     return mbf_msgs::ExePathResult::SUCCESS;
   }
+
+  publishGoalInfo(goal_dist, delta_orient);
 
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx);
@@ -1003,6 +1008,7 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::PoseSta
             }
             time_last_oscillation_ = ros::Time::now();  
             planner_->setPreferredTurningDir(last_preferred_rotdir_);
+            ROS_INFO_THROTTLE(1.0, "AMTC: Detecting oscilation!!");
         }
         else if (!recently_oscillated && last_preferred_rotdir_ != RotType::none) // clear recovery behavior
         {

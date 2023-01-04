@@ -50,6 +50,7 @@
 
 
 // timed-elastic-band related classes
+#include <teb_local_planner/GoalInfo.h>
 #include <teb_local_planner/optimal_planner.h>
 #include <teb_local_planner/homotopy_class_planner.h>
 #include <teb_local_planner/visualization.h>
@@ -390,6 +391,21 @@ protected:
   
   void configureBackupModes(std::vector<geometry_msgs::PoseStamped>& transformed_plan,  int& goal_idx);
 
+  void publishGoalInfo(const double goal_dist, const double yaw_dist)
+  {
+    GoalInfo msg;
+    msg.xy_dist = goal_dist;
+    msg.yaw_dist = yaw_dist;
+
+    msg.xy_tolerance = cfg_.goal_tolerance.xy_goal_tolerance;
+    msg.yaw_tolerance = cfg_.goal_tolerance.yaw_goal_tolerance;
+
+    goal_info_pub.publish(msg);
+    
+    // ROS_INFO_THROTTLE(2.0, "Goal Dist = %.3f (< %.3f). Delta yaw = %.3f (< %.3f)", goal_dist, , fabs(delta_orient), cfg_.goal_tolerance.yaw_goal_tolerance);
+    return;
+  }
+
 
   
 private:
@@ -445,6 +461,8 @@ private:
     
   // flags
   bool initialized_; //!< Keeps track about the correct initialization of this class
+
+  ros::Publisher goal_info_pub;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
