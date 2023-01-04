@@ -128,6 +128,8 @@ bool HomotopyClassPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const
   // Select which candidate (based on alternative homotopy classes) should be used
   selectBestTeb();
 
+  ROS_INFO("Best Teb poses: %d. Number of tebs = %lu", best_teb_->teb().sizePoses(), tebs_.size());
+
   initial_plan_ = nullptr; // clear pointer to any previous initial plan (any previous plan is useless regarding the h-signature);
   return true;
 }
@@ -747,6 +749,14 @@ TebOptPlannerContainer::iterator HomotopyClassPlanner::removeTeb(TebOptimalPlann
 
 void HomotopyClassPlanner::setPreferredTurningDir(RotType dir)
 {
+  if(dir == RotType::left)
+  {
+    ROS_INFO("setPreferredTurningDir left");
+  }
+  if(dir == RotType::right)
+  {
+    ROS_INFO("setPreferredTurningDir right");
+  }
   // set preferred turning dir for all TEBs
   for (TebOptPlannerContainer::const_iterator it_teb = tebs_.begin(); it_teb != tebs_.end(); ++it_teb)
   {

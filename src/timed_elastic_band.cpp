@@ -393,6 +393,9 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
   {
     PoseSE2 start(plan.front().pose);
     PoseSE2 goal(plan.back().pose);
+
+    // ROS_INFO("Start: %.3f, %.3f", plan.front().pose.position.x, plan.front().pose.position.y);
+    // ROS_INFO("Goal: %.3f, %.3f", plan.back().pose.position.x, plan.back().pose.position.y);
     
     addPose(start); // add starting point with given orientation
     setPoseVertexFixed(0,true); // StartConf is a fixed constraint during optimization

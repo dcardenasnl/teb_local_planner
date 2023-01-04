@@ -673,17 +673,21 @@ bool TebLocalPlannerROS::pruneGlobalPlan(const tf2_ros::Buffer& tf, const geomet
     // iterate plan until a pose close the robot is found
     std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan.begin();
     std::vector<geometry_msgs::PoseStamped>::iterator erase_end = it;
+    unsigned int i=0;
     while (it != global_plan.end())
     {
       double dx = robot.pose.position.x - it->pose.position.x;
       double dy = robot.pose.position.y - it->pose.position.y;
       double dist_sq = dx * dx + dy * dy;
+      // ROS_INFO("global path index %u. Dist = %.3f. Removed = %d. Threshold = %.3f", i, dist_sq, dist_sq < dist_thresh_sq, dist_thresh_sq);
       if (dist_sq < dist_thresh_sq)
       {
+        // ROS_INFO("ERASE END");
          erase_end = it;
          break;
       }
       ++it;
+      i++;
     }
     if (erase_end == global_plan.end())
       return false;
@@ -733,6 +737,7 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
     dist_threshold *= 0.85; // just consider 85% of the costmap size to better incorporate point obstacle that are
                            // located on the border of the local costmap
     
+    ROS_INFO("dist_threshold = %.3f. Res = %.3f. Size = %u, %u", dist_threshold, costmap.getResolution(), costmap.getSizeInCellsX(), costmap.getSizeInCellsY());
 
     int i = 0;
     double sq_dist_threshold = dist_threshold * dist_threshold;
@@ -819,6 +824,14 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
 
     return false;
   }
+
+
+  ROS_INFO("global plan Start: %.3f, %.3f", global_plan_.front().pose.position.x, global_plan_.front().pose.position.y);
+  ROS_INFO("global plan Goal: %.3f, %.3f", global_plan_.back().pose.position.x, global_plan_.back().pose.position.y);
+
+  ROS_INFO("Tra plan Start: %.3f, %.3f", transformed_plan.front().pose.position.x, transformed_plan.front().pose.position.y);
+  ROS_INFO("Tra plan Goal: %.3f, %.3f", transformed_plan.back().pose.position.x, transformed_plan.back().pose.position.y);
+
 
   return true;
 }
