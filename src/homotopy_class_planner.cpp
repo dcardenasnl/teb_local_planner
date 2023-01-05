@@ -128,7 +128,7 @@ bool HomotopyClassPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const
   // Select which candidate (based on alternative homotopy classes) should be used
   selectBestTeb();
 
-  ROS_INFO("Best Teb poses: %d. Number of tebs = %lu", best_teb_->teb().sizePoses(), tebs_.size());
+  // ROS_INFO("Best Teb poses: %d. Number of tebs = %lu", best_teb_->teb().sizePoses(), tebs_.size());
 
   initial_plan_ = nullptr; // clear pointer to any previous initial plan (any previous plan is useless regarding the h-signature);
   return true;

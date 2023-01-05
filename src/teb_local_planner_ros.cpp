@@ -737,11 +737,11 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
     dist_threshold *= 0.85; // just consider 85% of the costmap size to better incorporate point obstacle that are
                            // located on the border of the local costmap
     
-    ROS_INFO("dist_threshold = %.3f. Res = %.3f. Size = %u, %u", dist_threshold, costmap.getResolution(), costmap.getSizeInCellsX(), costmap.getSizeInCellsY());
-
     int i = 0;
     double sq_dist_threshold = dist_threshold * dist_threshold;
     double sq_dist = 1e10;
+
+    // ROS_INFO("sq_dist_threshold = %.3f, dist_threshold = %.3f. Res = %.3f. Size = %u, %u", sq_dist_threshold, dist_threshold, costmap.getResolution(), costmap.getSizeInCellsX(), costmap.getSizeInCellsY());
     
     //we need to loop to a point on the plan that is within a certain distance of the robot
     bool robot_reached = false;
@@ -778,6 +778,17 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
       double x_diff = robot_pose.pose.position.x - global_plan[i].pose.position.x;
       double y_diff = robot_pose.pose.position.y - global_plan[i].pose.position.y;
       sq_dist = x_diff * x_diff + y_diff * y_diff;
+
+      // if(sq_dist <= sq_dist_threshold)
+      // {
+      //   ROS_INFO("-- Add pose %.3f %.3f to translation, diff = %.3f, %.3f. sq_dist=%.3f, sq_dist_threshold=%.3f",
+      //     global_plan[i].pose.position.x, global_plan[i].pose.position.y, x_diff, y_diff, sq_dist, sq_dist_threshold);
+      // }
+      // else
+      // {
+      //   ROS_WARN("-- Stop in pose %.3f %.3f to translation, diff = %.3f, %.3f. sq_dist=%.3f, sq_dist_threshold=%.3f",
+      //     global_plan[i].pose.position.x, global_plan[i].pose.position.y, x_diff, y_diff, sq_dist, sq_dist_threshold);
+      // }
       
       // caclulate distance to previous pose
       if (i>0 && max_plan_length>0)
@@ -785,6 +796,8 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
 
       ++i;
     }
+
+    // ROS_INFO("transformed_plan Size = %lu", transformed_plan.size());
         
     // if we are really close to the goal (<sq_dist_threshold) and the goal is not yet reached (e.g. orientation error >>0)
     // the resulting transformed plan can be empty. In that case we explicitly inject the global goal.
@@ -826,11 +839,11 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
   }
 
 
-  ROS_INFO("global plan Start: %.3f, %.3f", global_plan_.front().pose.position.x, global_plan_.front().pose.position.y);
-  ROS_INFO("global plan Goal: %.3f, %.3f", global_plan_.back().pose.position.x, global_plan_.back().pose.position.y);
-
-  ROS_INFO("Tra plan Start: %.3f, %.3f", transformed_plan.front().pose.position.x, transformed_plan.front().pose.position.y);
-  ROS_INFO("Tra plan Goal: %.3f, %.3f", transformed_plan.back().pose.position.x, transformed_plan.back().pose.position.y);
+  // ROS_INFO("----");
+  // ROS_INFO("global_plan_ Size = %lu END", global_plan_.size());
+  // ROS_INFO("transformed_plan Size = %lu END", transformed_plan.size());
+  // ROS_INFO("global plan Start: %.3f, %.3f, Goal: %.3f, %.3f", global_plan_.front().pose.position.x, global_plan_.front().pose.position.y, global_plan_.back().pose.position.x, global_plan_.back().pose.position.y);
+  // ROS_INFO("Tra plan Start: %.3f, %.3f, Goal: %.3f, %.3f", transformed_plan.front().pose.position.x, transformed_plan.front().pose.position.y, transformed_plan.back().pose.position.x, transformed_plan.back().pose.position.y);
 
 
   return true;
