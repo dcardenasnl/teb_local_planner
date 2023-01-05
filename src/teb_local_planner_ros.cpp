@@ -57,6 +57,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/solvers/cholmod/linear_solver_cholmod.h"
 
+#include <chrono>
+
 
 // register this planner both as a BaseLocalPlanner and as a MBF's CostmapController plugin
 PLUGINLIB_EXPORT_CLASS(teb_local_planner::TebLocalPlannerROS, nav_core::BaseLocalPlanner)
@@ -126,6 +128,8 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     tf_ = tf;
     costmap_ros_ = costmap_ros;
     costmap_ = costmap_ros_->getCostmap(); // locking should be done in MoveBase.
+
+    ROS_INFO("Teb use costmap of %u %u cells", costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     
     costmap_model_ = boost::make_shared<base_local_planner::CostmapModel>(*costmap_);
 
@@ -224,10 +228,17 @@ bool TebLocalPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& 
 
 bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
 {
+  auto start = std::chrono::system_clock::now();
   std::string dummy_message;
   geometry_msgs::PoseStamped dummy_pose;
   geometry_msgs::TwistStamped dummy_velocity, cmd_vel_stamped;
   uint32_t outcome = computeVelocityCommands(dummy_pose, dummy_velocity, cmd_vel_stamped, dummy_message);
+  ros::Time end_time = ros::Time::now();
+  // Some computation here
+  auto end = std::chrono::system_clock::now();
+ 
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::cout << "Total elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
   cmd_vel = cmd_vel_stamped.twist;
   return outcome == mbf_msgs::ExePathResult::SUCCESS;
 }
@@ -345,6 +356,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   obstacles_.clear();
   
   // Update obstacle container with costmap information or polygons provided by a costmap_converter plugin
+  // ROS_INFO("Update obstacle");
   if (costmap_converter_)
     updateObstacleContainerWithCostmapConverter();
   else
@@ -488,8 +500,10 @@ void TebLocalPlannerROS::updateObstacleContainerWithCostmap()
     {
       for (unsigned int j=0; j<costmap_->getSizeInCellsY()-1; ++j)
       {
-        if (costmap_->getCost(i,j) == costmap_2d::LETHAL_OBSTACLE)
+        // if (costmap_->getCost(i,j) == costmap_2d::LETHAL_OBSTACLE)
+        if (costmap_->getCost(i,j) > 100)
         {
+          // ROS_INFO("%u, %u, %d", i, j, costmap_->getCost(i,j));
           Eigen::Vector2d obs;
           costmap_->mapToWorld(i,j,obs.coeffRef(0), obs.coeffRef(1));
             
@@ -503,6 +517,8 @@ void TebLocalPlannerROS::updateObstacleContainerWithCostmap()
       }
     }
   }
+
+  // ROS_INFO("Obstacles size = %lu", obstacles_.size());
 }
 
 void TebLocalPlannerROS::updateObstacleContainerWithCostmapConverter()

@@ -40,6 +40,8 @@
 
 #include <limits>
 
+#include <chrono>
+
 namespace teb_local_planner
 {
 
@@ -116,17 +118,38 @@ bool HomotopyClassPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const
 {
   ROS_ASSERT_MSG(initialized_, "Call initialize() first.");
 
+  // auto start_time = std::chrono::system_clock::now();
+  // std::chrono::duration<double> elapsed_seconds;
+
   // Update old TEBs with new start, goal and velocity
   updateAllTEBs(&start, &goal, start_vel);
 
+  // elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  // std::cout << "updateAllTEBs time: " << elapsed_seconds.count() << "s" << std::endl;
+
   // Init new TEBs based on newly explored homotopy classes
   exploreEquivalenceClassesAndInitTebs(start, goal, cfg_->obstacles.min_obstacle_dist, start_vel, free_goal_vel);
+
+  // elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  // std::cout << "exploreEquivalenceClassesAndInitTebs time: " << elapsed_seconds.count() << "s" << std::endl;
+
   // update via-points if activated
   updateReferenceTrajectoryViaPoints(cfg_->hcp.viapoints_all_candidates);
+
+  // elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  // std::cout << "updateReferenceTrajectoryViaPoints time: " << elapsed_seconds.count() << "s" << std::endl;
+
   // Optimize all trajectories in alternative homotopy classes
   optimizeAllTEBs(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
+
+  // elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  // std::cout << "optimizeAllTEBs time: " << elapsed_seconds.count() << "s" << std::endl;
+
   // Select which candidate (based on alternative homotopy classes) should be used
   selectBestTeb();
+
+  // elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  // std::cout << "selectBestTeb Total time b: " << elapsed_seconds.count() << "s" << std::endl;
 
   // ROS_INFO("Best Teb poses: %d. Number of tebs = %lu", best_teb_->teb().sizePoses(), tebs_.size());
 
@@ -346,23 +369,44 @@ void HomotopyClassPlanner::updateReferenceTrajectoryViaPoints(bool all_trajector
 
 void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& start, const PoseSE2& goal, double dist_to_obst, const geometry_msgs::Twist* start_vel, bool free_goal_vel)
 {
+  auto start_time = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed_seconds;
+
   // first process old trajectories
   renewAndAnalyzeOldTebs(cfg_->hcp.delete_detours_backwards);
+
+  elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  std::cout << "renewAndAnalyzeOldTebs time: " << elapsed_seconds.count() << "s" << std::endl;
+
   randomlyDropTebs();
+
+  elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  std::cout << "randomlyDropTebs time: " << elapsed_seconds.count() << "s" << std::endl;
 
   // inject initial plan if available and not yet captured
   if (initial_plan_)
   {
     initial_plan_teb_ = addAndInitNewTeb(*initial_plan_, start_vel, free_goal_vel);
+    elapsed_seconds = std::chrono::system_clock::now()-start_time;
+    std::cout << "addAndInitNewTeb time: " << elapsed_seconds.count() << "s" << std::endl;
   }
   else
   {
     initial_plan_teb_.reset();
     initial_plan_teb_ = getInitialPlanTEB(); // this method searches for initial_plan_eq_class_ in the teb container (-> if !initial_plan_teb_)
+    elapsed_seconds = std::chrono::system_clock::now()-start_time;
+    std::cout << "reset and getInitialPlanTEB time: " << elapsed_seconds.count() << "s" << std::endl;
   }
 
   // now explore new homotopy classes and initialize tebs if new ones are found. The appropriate createGraph method is chosen via polymorphism.
   graph_search_->createGraph(start,goal,dist_to_obst,cfg_->hcp.obstacle_heading_threshold, start_vel, free_goal_vel);
+
+  elapsed_seconds = std::chrono::system_clock::now()-start_time;
+  std::cout << "createGraph time: " << elapsed_seconds.count() << "s" << std::endl;
+  std::cout << "dist_to_obst: " << dist_to_obst << std::endl;
+  std::cout << "cfg_->hcp.obstacle_heading_threshold: " << cfg_->hcp.obstacle_heading_threshold << std::endl;
+  std::cout << "start_vels: " << start_vel->linear.x << ", " << start_vel->angular.z << std::endl;
+  std::cout << "free_goal_vel:" << free_goal_vel<< std::endl;
 }
 
 
