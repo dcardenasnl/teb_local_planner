@@ -203,17 +203,12 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
   //                 the legacy fast mode as default until we finish our tests.
   bool fast_mode = !cfg_->obstacles.include_dynamic_obstacles;
 
-  // auto start_time = std::chrono::system_clock::now();
-  // std::chrono::duration<double> elapsed_seconds;
-  // std::cout << "------" << std::endl;
-  
   for(int i=0; i<iterations_outerloop; ++i)
   {
+    ROS_INFO("TEB: Outer iter = %d", i);
     if (cfg_->trajectory.teb_autosize)
     {
-      //teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples);
       teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples, fast_mode);
-
     }
 
     success = buildGraph(weight_multiplier);
@@ -223,9 +218,6 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
         return false;
     }
 
-    // elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    // std::cout << "buildGraphTime time: " << elapsed_seconds.count() << "s" << ", iter: " << iterations_outerloop << std::endl;
-
     success = optimizeGraph(iterations_innerloop, false);
     if (!success) 
     {
@@ -234,27 +226,13 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     }
     optimized_ = true;
 
-    // elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    // std::cout << "optimizeGraphTime time: " << elapsed_seconds.count() << "s" << ", iter: " << iterations_outerloop << std::endl;
-    
     if (compute_cost_afterwards && i==iterations_outerloop-1) // compute cost vec only in the last iteration
       computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost);
       
-    // elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    // std::cout << "computeCurrentCostTime time: " << elapsed_seconds.count() << "s" << ", iter: " << iterations_outerloop << std::endl;
-
     clearGraph();
 
-    // elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    // std::cout < "clear<GraphTime time: " << elapsed_seconds.count() << "s" << ", iter: " << iterations_outerloop << std::endl;
-    
     weight_multiplier *= cfg_->optim.weight_adapt_factor;
   }
-
-  // auto end = std::chrono::system_clock::now();
-  // elapsed_seconds = end-start_time;
-  // std::cout << "optimizeTEB time2: " << elapsed_seconds.count() << "s" << std::endl;
-  
 
   return true;
 }
@@ -304,13 +282,7 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped>& init
   else
     vel_goal_.first = true; // we just reactivate and use the previously set velocity (should be zero if nothing was modified)
   
-  // now optimize
-
-  auto start_time = std::chrono::system_clock::now();
   bool result = optimizeTEB(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
-  auto end = std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end-start_time;
-  std::cout << "optimizeTEB time b: " << elapsed_seconds.count() << "s" << std::endl;
   return result;
 }
 

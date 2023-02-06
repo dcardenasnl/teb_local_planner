@@ -233,12 +233,6 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   geometry_msgs::PoseStamped dummy_pose;
   geometry_msgs::TwistStamped dummy_velocity, cmd_vel_stamped;
   uint32_t outcome = computeVelocityCommands(dummy_pose, dummy_velocity, cmd_vel_stamped, dummy_message);
-  ros::Time end_time = ros::Time::now();
-  // Some computation here
-  auto end = std::chrono::system_clock::now();
- 
-  std::chrono::duration<double> elapsed_seconds = end-start;
-  std::cout << "Total elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
   cmd_vel = cmd_vel_stamped.twist;
   return outcome == mbf_msgs::ExePathResult::SUCCESS;
 }
@@ -384,6 +378,8 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
     return mbf_msgs::ExePathResult::NO_VALID_CMD;
   }
 
+  ROS_INFO("TEB sucess");
+
   // Check for divergence
   if (planner_->hasDiverged())
   {
@@ -500,8 +496,8 @@ void TebLocalPlannerROS::updateObstacleContainerWithCostmap()
     {
       for (unsigned int j=0; j<costmap_->getSizeInCellsY()-1; ++j)
       {
-        // if (costmap_->getCost(i,j) == costmap_2d::LETHAL_OBSTACLE)
-        if (costmap_->getCost(i,j) > 100)
+        if (costmap_->getCost(i,j) == costmap_2d::LETHAL_OBSTACLE)
+        // if (costmap_->getCost(i,j) > 100)
         {
           // ROS_INFO("%u, %u, %d", i, j, costmap_->getCost(i,j));
           Eigen::Vector2d obs;

@@ -375,38 +375,28 @@ void HomotopyClassPlanner::exploreEquivalenceClassesAndInitTebs(const PoseSE2& s
   // first process old trajectories
   renewAndAnalyzeOldTebs(cfg_->hcp.delete_detours_backwards);
 
-  elapsed_seconds = std::chrono::system_clock::now()-start_time;
-  std::cout << "renewAndAnalyzeOldTebs time: " << elapsed_seconds.count() << "s" << std::endl;
-
   randomlyDropTebs();
-
-  elapsed_seconds = std::chrono::system_clock::now()-start_time;
-  std::cout << "randomlyDropTebs time: " << elapsed_seconds.count() << "s" << std::endl;
 
   // inject initial plan if available and not yet captured
   if (initial_plan_)
   {
     initial_plan_teb_ = addAndInitNewTeb(*initial_plan_, start_vel, free_goal_vel);
-    elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    std::cout << "addAndInitNewTeb time: " << elapsed_seconds.count() << "s" << std::endl;
   }
   else
   {
     initial_plan_teb_.reset();
     initial_plan_teb_ = getInitialPlanTEB(); // this method searches for initial_plan_eq_class_ in the teb container (-> if !initial_plan_teb_)
-    elapsed_seconds = std::chrono::system_clock::now()-start_time;
-    std::cout << "reset and getInitialPlanTEB time: " << elapsed_seconds.count() << "s" << std::endl;
   }
 
   // now explore new homotopy classes and initialize tebs if new ones are found. The appropriate createGraph method is chosen via polymorphism.
-  graph_search_->createGraph(start,goal,dist_to_obst,cfg_->hcp.obstacle_heading_threshold, start_vel, free_goal_vel);
+  graph_search_->createGraph(start, goal, dist_to_obst, cfg_->hcp.obstacle_heading_threshold, start_vel, free_goal_vel);  // This make TEB slow
 
   elapsed_seconds = std::chrono::system_clock::now()-start_time;
-  std::cout << "createGraph time: " << elapsed_seconds.count() << "s" << std::endl;
-  std::cout << "dist_to_obst: " << dist_to_obst << std::endl;
-  std::cout << "cfg_->hcp.obstacle_heading_threshold: " << cfg_->hcp.obstacle_heading_threshold << std::endl;
-  std::cout << "start_vels: " << start_vel->linear.x << ", " << start_vel->angular.z << std::endl;
-  std::cout << "free_goal_vel:" << free_goal_vel<< std::endl;
+  std::cout << "exploreEquivalenceClassesAndInitTebs time: " << elapsed_seconds.count() << "s" << std::endl;
+  // std::cout << "dist_to_obst: " << dist_to_obst << std::endl;
+  // std::cout << "cfg_->hcp.obstacle_heading_threshold: " << cfg_->hcp.obstacle_heading_threshold << std::endl;
+  // std::cout << "start_vels: " << start_vel->linear.x << ", " << start_vel->angular.z << std::endl;
+  // std::cout << "free_goal_vel:" << free_goal_vel<< std::endl;
 }
 
 
