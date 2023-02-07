@@ -125,7 +125,6 @@ public:
     double vel1 = dist1 / dt1->dt();
     double vel2 = dist2 / dt2->dt();
     
-    
     // consider directions
 //     vel1 *= g2o::sign(diff1[0]*cos(pose1->theta()) + diff1[1]*sin(pose1->theta())); 
 //     vel2 *= g2o::sign(diff2[0]*cos(pose2->theta()) + diff2[1]*sin(pose2->theta())); 
@@ -134,17 +133,50 @@ public:
     
     const double acc_lin  = (vel2 - vel1)*2 / ( dt1->dt() + dt2->dt() );
    
-
     _error[0] = penaltyBoundToInterval(acc_lin,cfg_->robot.acc_lim_x,cfg_->optim.penalty_epsilon);
     
     // ANGULAR ACCELERATION
-    const double omega1 = angle_diff1 / dt1->dt();
-    const double omega2 = angle_diff2 / dt2->dt();
+
+    double omega1 = angle_diff1 / dt1->dt();
+    double omega2 = angle_diff2 / dt2->dt();
+
+    const bool USE_WHEEL_ANGULAR_ACCELERATION = true;
+    if(USE_WHEEL_ANGULAR_ACCELERATION)
+    {
+      if (omega1==0 || vel1==0)
+      {
+        omega1 = 0.0;
+      }
+      else
+      {
+        double radius = vel1/omega1;
+        if (fabs(radius) < cfg_->robot.min_turning_radius)
+        {
+          radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+        }
+        omega1 = std::atan(cfg_->robot.wheelbase / radius);
+      }
+      if (omega2==0 || vel2==0)
+      {
+        omega2 = 0.0;
+      }
+      else
+      {
+        double radius = vel2/omega2;
+        if (fabs(radius) < cfg_->robot.min_turning_radius)
+        {
+          radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+        }
+        omega2 = std::atan(cfg_->robot.wheelbase / radius);
+      }
+    }
+
     const double acc_rot  = (omega2 - omega1)*2 / ( dt1->dt() + dt2->dt() );
       
     _error[1] = penaltyBoundToInterval(acc_rot,cfg_->robot.acc_lim_theta,cfg_->optim.penalty_epsilon);
 
-    
+    // std::cout << "_error[1]: " << _error[1] << ", acc_rot" << acc_rot << ". Poses " << pose1->theta() << " " << pose2->theta() << " " << pose3->theta() << std::endl;
+
     ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeAcceleration::computeError() translational: _error[0]=%f\n",_error[0]);
     ROS_ASSERT_MSG(std::isfinite(_error[1]), "EdgeAcceleration::computeError() rotational: _error[1]=%f\n",_error[1]);
   }
