@@ -123,8 +123,26 @@ void TebOptimalPlanner::visualize()
  
   visualization_->publishLocalPlanAndPoses(teb_);
   
-  if (teb_.sizePoses() > 0)
-    visualization_->publishRobotFootprintModel(teb_.Pose(0), *robot_model_);
+  if (teb_.sizePoses() > 1)
+  {
+    PoseSE2 pose = teb_.Pose(0);
+    double vx, vy, omega;
+    extractVelocity(teb_.Pose(0), teb_.Pose(1), teb_.TimeDiff(0), vx, vy, omega);
+
+    double v = sqrt(vx*vx + vy*vy);
+    if (omega!=0 && v!=0)
+    {
+      double radius = v/omega;
+      if (fabs(radius) < cfg_->robot.min_turning_radius)
+        radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+      omega = std::atan(cfg_->robot.wheelbase / radius);
+    }
+
+    ROS_INFO("Omega = %.3f", omega);
+
+    pose.addSteeringPose(omega);
+    visualization_->publishRobotFootprintModel(pose, *robot_model_);
+  }
   
   if (cfg_->trajectory.publish_feedback)
     visualization_->publishFeedbackMessage(*this, *obstacles_);
@@ -205,7 +223,6 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
 
   for(int i=0; i<iterations_outerloop; ++i)
   {
-    ROS_INFO("TEB: Outer iter = %d", i);
     if (cfg_->trajectory.teb_autosize)
     {
       teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples, fast_mode);
