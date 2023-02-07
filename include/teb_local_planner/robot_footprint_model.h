@@ -1,42 +1,3 @@
-/*********************************************************************
- *
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2016,
- *  TU Dortmund - Institute of Control Theory and Systems Engineering.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the institute nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Christoph Rösmann
- *********************************************************************/
-
-
 #ifndef ROBOT_FOOTPRINT_MODEL_H
 #define ROBOT_FOOTPRINT_MODEL_H
 
@@ -773,6 +734,235 @@ private:
   
 };
 
+
+/**
+ * @class CenterArticulatedRobotFootprint
+ * @brief Class that approximates a center ariculated robot with two boxes approach
+ */
+class CenterArticulatedRobotFootprint : public BaseRobotFootprintModel
+{
+public:
+
+  struct CenterArticulatedModel
+  {
+    double ff_length_; //!< Distance from center articulation to front-front tip
+    double fr_length_; //!< Distance from center articulation to front-front rear
+    double rf_length_; //!< Distance from center articulation to rear-front tip
+    double rr_length_; //!< Distance from center articulation to rear-rear tip
+    double f_width_; //!< Widht of front reactangle
+    double r_width_; //!< Widht of rear reactangle
+  }; //!< Trajectory related parameters
+  
+  /**
+    * @brief Default constructor of the abstract obstacle class
+    * @param vertices footprint vertices (only x and y) around the robot center (0,0) (do not repeat the first and last vertex at the end)
+    */
+  CenterArticulatedRobotFootprint(const CenterArticulatedModel& model){model_ = model;}
+  
+  /**
+   * @brief Virtual destructor.
+   */
+  virtual ~CenterArticulatedRobotFootprint() { }
+
+  /**
+   * @brief Set vertices of the contour/footprint
+   * @param vertices footprint vertices (only x and y) around the robot center (0,0) (do not repeat the first and last vertex at the end)
+   */
+  void updateModel(const CenterArticulatedModel& model) {model_ = model;}
+  
+  /**
+    * @brief Calculate the distance between the robot and an obstacle
+    * @param current_pose Current robot pose
+    * @param obstacle Pointer to the obstacle
+    * @return Euclidean distance to the robot
+    */
+  virtual double calculateDistance(const PoseSE2& current_pose, const Obstacle* obstacle) const
+  {
+    Point2dContainer front_polygon;
+    Point2dContainer rear_polygon;
+    transformToWorldFront(current_pose, front_polygon);
+    transformToWorldRear(current_pose, rear_polygon);
+    double min_dist_front = obstacle->getMinimumDistance(front_polygon);
+    double min_dist_rear = obstacle->getMinimumDistance(rear_polygon);
+    return std::min(min_dist_front, min_dist_rear);
+  }
+
+  /**
+    * @brief Estimate the distance between the robot and the predicted location of an obstacle at time t
+    * @param current_pose robot pose, from which the distance to the obstacle is estimated
+    * @param obstacle Pointer to the dynamic obstacle (constant velocity model is assumed)
+    * @param t time, for which the predicted distance to the obstacle is calculated
+    * @return Euclidean distance to the robot
+    */
+  virtual double estimateSpatioTemporalDistance(const PoseSE2& current_pose, const Obstacle* obstacle, double t) const
+  {
+    Point2dContainer front_polygon;
+    Point2dContainer rear_polygon;
+    transformToWorldFront(current_pose, front_polygon);
+    transformToWorldRear(current_pose, rear_polygon);
+    double min_dist_front = obstacle->getMinimumSpatioTemporalDistance(front_polygon, t);
+    double min_dist_rear = obstacle->getMinimumSpatioTemporalDistance(rear_polygon, t);
+    return std::min(min_dist_front, min_dist_rear);
+  }
+
+  /**
+    * @brief Visualize the robot using a markers
+    * 
+    * Fill a marker message with all necessary information (type, pose, scale and color).
+    * The header, namespace, id and marker lifetime will be overwritten.
+    * @param current_pose Current robot pose
+    * @param[out] markers container of marker messages describing the robot shape
+    * @param color Color of the footprint
+    */
+  virtual void visualizeRobot(const PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const
+  {
+    Eigen::Vector2d dirRear = current_pose.orientationUnitVec();
+    Eigen::Vector2d dirFront = current_pose.steerPosUnitVec();
+
+    if (model_.ff_length_>0  && model_.fr_length_>0 && model_.f_width_>0)
+    {
+      markers.push_back(visualization_msgs::Marker());
+      visualization_msgs::Marker& marker1 = markers.back();
+      marker1.type = visualization_msgs::Marker::LINE_STRIP;
+      current_pose.toPoseMsg(marker1.pose);
+
+      geometry_msgs::Point point;
+      // Front-RL
+      point.x = model_.fr_length_;
+      point.y = -model_.f_width_/2;
+      point.z = 0;
+      marker1.points.push_back(point);
+      // Front-RR
+      point.x = model_.fr_length_;
+      point.y = model_.f_width_/2;
+      point.z = 0;
+      marker1.points.push_back(point);
+      // Front-FR
+      point.x = model_.ff_length_;
+      point.y = model_.f_width_/2;
+      point.z = 0;
+      marker1.points.push_back(point);
+      // Front-FL
+      point.x = model_.ff_length_;
+      point.y = -model_.f_width_/2;
+      point.z = 0;
+      marker1.points.push_back(point);
+      // add first point again in order to close the polygon
+      point.x = model_.fr_length_;
+      point.y = -model_.f_width_/2;
+      point.z = 0;
+      marker1.points.push_back(point);
+
+      marker1.scale.x = marker_line_width; 
+      marker1.color = color;
+
+    }
+
+    if (model_.rr_length_>0  && model_.rf_length_>0 && model_.r_width_>0)
+    {
+      markers.push_back(visualization_msgs::Marker());
+      visualization_msgs::Marker& marker2 = markers.back();
+      marker2.type = visualization_msgs::Marker::LINE_STRIP;
+      current_pose.toSteeringPoseMsg(marker2.pose);
+
+      geometry_msgs::Point point;
+      // Front-RL
+      point.x = -model_.rr_length_;
+      point.y = -model_.r_width_/2;
+      point.z = 0;
+      marker2.points.push_back(point);
+      // Front-RR
+      point.x = -model_.rr_length_;
+      point.y = model_.r_width_/2;
+      point.z = 0;
+      marker2.points.push_back(point);
+      // Front-FR
+      point.x = -model_.rf_length_;
+      point.y = model_.r_width_/2;
+      point.z = 0;
+      marker2.points.push_back(point);
+      // Front-FL
+      point.x = -model_.rf_length_;
+      point.y = -model_.r_width_/2;
+      point.z = 0;
+      marker2.points.push_back(point);
+      // add first point again in order to close the polygon
+      point.x = -model_.rr_length_;
+      point.y = -model_.r_width_/2;
+      point.z = 0;
+      marker2.points.push_back(point);
+
+      marker2.scale.x = marker_line_width; 
+      marker2.color = color;
+    }
+  }
+  
+  /**
+   * @brief Compute the inscribed radius of the footprint model
+   * @return inscribed radius
+   */
+  virtual double getInscribedRadius() 
+  {
+    return std::min(model_.f_width_, model_.r_width_);
+  }
+
+private:
+    
+  /**
+    * @brief Transforms a polygon to the world frame manually
+    * @param current_pose Current robot pose
+    * @param[out] polygon_world polygon in the world frame
+    */
+  void transformToWorldFront(const PoseSE2& current_pose, Point2dContainer& polygon_world) const
+  {
+    double cos_th = std::cos(current_pose.theta()+current_pose.steering_pos());
+    double sin_th = std::sin(current_pose.theta()+current_pose.steering_pos());
+
+    polygon_world.resize(4);
+    // Front - FR
+    polygon_world[0].x() = current_pose.x() + cos_th * model_.ff_length_ - sin_th * model_.f_width_/2;
+    polygon_world[0].y() = current_pose.y() + sin_th * model_.ff_length_ + cos_th * model_.f_width_/2;
+    // Front - FL
+    polygon_world[1].x() = current_pose.x() + cos_th * model_.ff_length_ - sin_th * (-model_.f_width_/2);
+    polygon_world[1].y() = current_pose.y() + sin_th * model_.ff_length_ + cos_th * (-model_.f_width_/2);
+    // Front - RL
+    polygon_world[2].x() = current_pose.x() + cos_th * model_.fr_length_ - sin_th * (-model_.f_width_/2);
+    polygon_world[2].y() = current_pose.y() + sin_th * model_.fr_length_ + cos_th * (-model_.f_width_/2);
+    // Front - RR
+    polygon_world[3].x() = current_pose.x() + cos_th * model_.fr_length_ - sin_th * model_.f_width_/2;
+    polygon_world[4].y() = current_pose.y() + sin_th * model_.fr_length_ + cos_th * model_.f_width_/2;
+  } 
+  
+  /**
+    * @brief Transforms a polygon to the world frame manually
+    * @param current_pose Current robot pose
+    * @param[out] polygon_world polygon in the world frame
+    */
+  void transformToWorldRear(const PoseSE2& current_pose, Point2dContainer& polygon_world) const
+  {
+    double cos_th = std::cos(current_pose.theta());
+    double sin_th = std::sin(current_pose.theta());
+
+    polygon_world.resize(4);
+    // Rear - FR
+    polygon_world[0].x() = current_pose.x() + cos_th * (-model_.rf_length_) - sin_th * model_.r_width_/2;
+    polygon_world[0].y() = current_pose.y() + sin_th * (-model_.rf_length_) + cos_th * model_.r_width_/2;
+    // Rear - FL
+    polygon_world[1].x() = current_pose.x() + cos_th * (-model_.rf_length_) - sin_th * (-model_.r_width_/2);
+    polygon_world[1].y() = current_pose.y() + sin_th * (-model_.rf_length_) + cos_th * (-model_.r_width_/2);
+    // Rear - RL
+    polygon_world[2].x() = current_pose.x() + cos_th * (-model_.rr_length_) - sin_th * (-model_.r_width_/2);
+    polygon_world[2].y() = current_pose.y() + sin_th * (-model_.rr_length_) + cos_th * (-model_.r_width_/2);
+    // Rear - RR
+    polygon_world[3].x() = current_pose.x() + cos_th * (-model_.rr_length_) - sin_th * model_.r_width_/2;
+    polygon_world[4].y() = current_pose.y() + sin_th * (-model_.rr_length_) + cos_th * model_.r_width_/2;
+  }
+
+  Point2dContainer vertices_;
+  CenterArticulatedModel model_;
+  const double marker_line_width = 0.2;
+  
+};
 
 
 

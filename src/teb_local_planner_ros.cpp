@@ -398,6 +398,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   // Check feasibility (but within the first few states only)
   if(cfg_.robot.is_footprint_dynamic)
   {
+    ROS_INFO("Use footprint dinamics");
     // Update footprint of the robot and minimum and maximum distance from the center of the robot to its footprint vertices.
     footprint_spec_ = costmap_ros_->getRobotFootprint();
     costmap_2d::calculateMinAndMaxDistances(footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);

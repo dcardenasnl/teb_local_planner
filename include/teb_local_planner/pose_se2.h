@@ -133,6 +133,8 @@ public:
     */ 
   ~PoseSE2() {}                
   
+
+  void addSteeringPose(double steering_pos) {_steering_pos = steering_pos;}
   
   /** @name Access and modify values */
   ///@{ 
@@ -188,12 +190,25 @@ public:
   const double& theta() const {return _theta;}
   
   /**
+    * @brief Access the orientation part (yaw angle) of the pose
+    * @return reference to the yaw angle
+    */ 
+  double& steering_pos() {return _steering_pos;}
+  
+  /**
+    * @brief Access the orientation part (yaw angle) of the pose (read-only)
+    * @return const reference to the yaw angle
+    */ 
+  const double& steering_pos() const {return _steering_pos;}
+  
+  /**
     * @brief Set pose to [0,0,0]
     */ 
   void setZero()
   {
     _position.setZero();
     _theta = 0;
+    _steering_pos = 0;
   }
   
   /**
@@ -208,11 +223,25 @@ public:
     pose.orientation = tf::createQuaternionMsgFromYaw(_theta);
   }
   
+    /**
+   * @brief Convert PoseSE2 to a geometry_msgs::Pose
+   * @param[out] pose Pose message
+   */
+  void toSteeringPoseMsg(geometry_msgs::Pose& pose) const
+  {
+    pose.position.x = _position.x();
+    pose.position.y = _position.y();
+    pose.position.z = 0;
+    pose.orientation = tf::createQuaternionMsgFromYaw(_theta+_steering_pos);
+  }
+  
   /**
    * @brief Return the unit vector of the current orientation
    * @returns [cos(theta), sin(theta))]^T
    */  
   Eigen::Vector2d orientationUnitVec() const {return Eigen::Vector2d(std::cos(_theta), std::sin(_theta));}
+
+  Eigen::Vector2d steerPosUnitVec() const {return Eigen::Vector2d(std::cos(_theta+_steering_pos), std::sin(_theta+_steering_pos));}
       
   ///@}
 
@@ -395,6 +424,7 @@ private:
   
   Eigen::Vector2d _position; 
   double _theta;
+  double _steering_pos;
       
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW  
