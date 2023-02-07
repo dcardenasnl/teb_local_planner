@@ -138,7 +138,7 @@ void TebVisualization::publishRobotFootprintModel(const PoseSE2& current_pose, c
     marker_it->action = visualization_msgs::Marker::ADD;
     marker_it->ns = ns;
     marker_it->id = idx;
-    marker_it->lifetime = ros::Duration(2.0);
+    marker_it->lifetime = ros::Duration();
     teb_marker_pub_.publish(*marker_it);
   }
   
@@ -146,7 +146,7 @@ void TebVisualization::publishRobotFootprintModel(const PoseSE2& current_pose, c
 
 void TebVisualization::publishInfeasibleRobotPose(const PoseSE2& current_pose, const BaseRobotFootprintModel& robot_model)
 {
-  publishRobotFootprintModel(current_pose, robot_model, "InfeasibleRobotPoses", toColorMsg(0.5, 0.8, 0.0, 0.0));
+  publishRobotFootprintModel(current_pose, robot_model, "InfeasibleRobotPoses", toColorMsg(0.8, 0.8, 0.0, 0.0));
 }
 
 

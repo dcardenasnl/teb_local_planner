@@ -378,8 +378,6 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
     return mbf_msgs::ExePathResult::NO_VALID_CMD;
   }
 
-  ROS_INFO("TEB sucess");
-
   // Check for divergence
   if (planner_->hasDiverged())
   {
@@ -1197,6 +1195,19 @@ RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(cons
       return boost::make_shared<PointRobotFootprint>();
     }
     
+  }
+
+    // center_articulated
+  if (model_name.compare("center_articulated") == 0)
+  {
+    CenterArticulatedRobotFootprint::CenterArticulatedModel model;
+    nh.getParam("footprint_model/ff_length", model.ff_length);
+    nh.getParam("footprint_model/fr_length", model.fr_length);
+    nh.getParam("footprint_model/rf_length", model.rf_length);
+    nh.getParam("footprint_model/rr_length", model.rr_length);
+    nh.getParam("footprint_model/f_width", model.f_width);
+    nh.getParam("footprint_model/r_width", model.r_width);
+    return boost::make_shared<CenterArticulatedRobotFootprint>(model);
   }
   
   // otherwise

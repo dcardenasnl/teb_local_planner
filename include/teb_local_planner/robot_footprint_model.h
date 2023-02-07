@@ -745,12 +745,12 @@ public:
 
   struct CenterArticulatedModel
   {
-    double ff_length_; //!< Distance from center articulation to front-front tip
-    double fr_length_; //!< Distance from center articulation to front-front rear
-    double rf_length_; //!< Distance from center articulation to rear-front tip
-    double rr_length_; //!< Distance from center articulation to rear-rear tip
-    double f_width_; //!< Widht of front reactangle
-    double r_width_; //!< Widht of rear reactangle
+    double ff_length; //!< Distance from center articulation to front-front tip
+    double fr_length; //!< Distance from center articulation to front-front rear
+    double rf_length; //!< Distance from center articulation to rear-front tip
+    double rr_length; //!< Distance from center articulation to rear-rear tip
+    double f_width; //!< Widht of front reactangle
+    double r_width; //!< Widht of rear reactangle
   }; //!< Trajectory related parameters
   
   /**
@@ -819,7 +819,7 @@ public:
     Eigen::Vector2d dirRear = current_pose.orientationUnitVec();
     Eigen::Vector2d dirFront = current_pose.steerPosUnitVec();
 
-    if (model_.ff_length_>0  && model_.fr_length_>0 && model_.f_width_>0)
+    if (model_.ff_length>0  && model_.fr_length>0 && model_.f_width>0)
     {
       markers.push_back(visualization_msgs::Marker());
       visualization_msgs::Marker& marker1 = markers.back();
@@ -828,28 +828,28 @@ public:
 
       geometry_msgs::Point point;
       // Front-RL
-      point.x = model_.fr_length_;
-      point.y = -model_.f_width_/2;
+      point.x = model_.fr_length;
+      point.y = -model_.f_width/2;
       point.z = 0;
       marker1.points.push_back(point);
       // Front-RR
-      point.x = model_.fr_length_;
-      point.y = model_.f_width_/2;
+      point.x = model_.fr_length;
+      point.y = model_.f_width/2;
       point.z = 0;
       marker1.points.push_back(point);
       // Front-FR
-      point.x = model_.ff_length_;
-      point.y = model_.f_width_/2;
+      point.x = model_.ff_length;
+      point.y = model_.f_width/2;
       point.z = 0;
       marker1.points.push_back(point);
       // Front-FL
-      point.x = model_.ff_length_;
-      point.y = -model_.f_width_/2;
+      point.x = model_.ff_length;
+      point.y = -model_.f_width/2;
       point.z = 0;
       marker1.points.push_back(point);
       // add first point again in order to close the polygon
-      point.x = model_.fr_length_;
-      point.y = -model_.f_width_/2;
+      point.x = model_.fr_length;
+      point.y = -model_.f_width/2;
       point.z = 0;
       marker1.points.push_back(point);
 
@@ -858,7 +858,7 @@ public:
 
     }
 
-    if (model_.rr_length_>0  && model_.rf_length_>0 && model_.r_width_>0)
+    if (model_.rr_length>0  && model_.rf_length>0 && model_.r_width>0)
     {
       markers.push_back(visualization_msgs::Marker());
       visualization_msgs::Marker& marker2 = markers.back();
@@ -867,28 +867,28 @@ public:
 
       geometry_msgs::Point point;
       // Front-RL
-      point.x = -model_.rr_length_;
-      point.y = -model_.r_width_/2;
+      point.x = -model_.rr_length;
+      point.y = -model_.r_width/2;
       point.z = 0;
       marker2.points.push_back(point);
       // Front-RR
-      point.x = -model_.rr_length_;
-      point.y = model_.r_width_/2;
+      point.x = -model_.rr_length;
+      point.y = model_.r_width/2;
       point.z = 0;
       marker2.points.push_back(point);
       // Front-FR
-      point.x = -model_.rf_length_;
-      point.y = model_.r_width_/2;
+      point.x = -model_.rf_length;
+      point.y = model_.r_width/2;
       point.z = 0;
       marker2.points.push_back(point);
       // Front-FL
-      point.x = -model_.rf_length_;
-      point.y = -model_.r_width_/2;
+      point.x = -model_.rf_length;
+      point.y = -model_.r_width/2;
       point.z = 0;
       marker2.points.push_back(point);
       // add first point again in order to close the polygon
-      point.x = -model_.rr_length_;
-      point.y = -model_.r_width_/2;
+      point.x = -model_.rr_length;
+      point.y = -model_.r_width/2;
       point.z = 0;
       marker2.points.push_back(point);
 
@@ -903,7 +903,7 @@ public:
    */
   virtual double getInscribedRadius() 
   {
-    return std::min(model_.f_width_, model_.r_width_);
+    return std::min(model_.f_width, model_.r_width);
   }
 
 private:
@@ -920,17 +920,17 @@ private:
 
     polygon_world.resize(4);
     // Front - FR
-    polygon_world[0].x() = current_pose.x() + cos_th * model_.ff_length_ - sin_th * model_.f_width_/2;
-    polygon_world[0].y() = current_pose.y() + sin_th * model_.ff_length_ + cos_th * model_.f_width_/2;
+    polygon_world[0].x() = current_pose.x() + cos_th * model_.ff_length - sin_th * model_.f_width/2;
+    polygon_world[0].y() = current_pose.y() + sin_th * model_.ff_length + cos_th * model_.f_width/2;
     // Front - FL
-    polygon_world[1].x() = current_pose.x() + cos_th * model_.ff_length_ - sin_th * (-model_.f_width_/2);
-    polygon_world[1].y() = current_pose.y() + sin_th * model_.ff_length_ + cos_th * (-model_.f_width_/2);
+    polygon_world[1].x() = current_pose.x() + cos_th * model_.ff_length - sin_th * (-model_.f_width/2);
+    polygon_world[1].y() = current_pose.y() + sin_th * model_.ff_length + cos_th * (-model_.f_width/2);
     // Front - RL
-    polygon_world[2].x() = current_pose.x() + cos_th * model_.fr_length_ - sin_th * (-model_.f_width_/2);
-    polygon_world[2].y() = current_pose.y() + sin_th * model_.fr_length_ + cos_th * (-model_.f_width_/2);
+    polygon_world[2].x() = current_pose.x() + cos_th * model_.fr_length - sin_th * (-model_.f_width/2);
+    polygon_world[2].y() = current_pose.y() + sin_th * model_.fr_length + cos_th * (-model_.f_width/2);
     // Front - RR
-    polygon_world[3].x() = current_pose.x() + cos_th * model_.fr_length_ - sin_th * model_.f_width_/2;
-    polygon_world[4].y() = current_pose.y() + sin_th * model_.fr_length_ + cos_th * model_.f_width_/2;
+    polygon_world[3].x() = current_pose.x() + cos_th * model_.fr_length - sin_th * model_.f_width/2;
+    polygon_world[3].y() = current_pose.y() + sin_th * model_.fr_length + cos_th * model_.f_width/2;
   } 
   
   /**
@@ -945,17 +945,17 @@ private:
 
     polygon_world.resize(4);
     // Rear - FR
-    polygon_world[0].x() = current_pose.x() + cos_th * (-model_.rf_length_) - sin_th * model_.r_width_/2;
-    polygon_world[0].y() = current_pose.y() + sin_th * (-model_.rf_length_) + cos_th * model_.r_width_/2;
+    polygon_world[0].x() = current_pose.x() + cos_th * (-model_.rf_length) - sin_th * model_.r_width/2;
+    polygon_world[0].y() = current_pose.y() + sin_th * (-model_.rf_length) + cos_th * model_.r_width/2;
     // Rear - FL
-    polygon_world[1].x() = current_pose.x() + cos_th * (-model_.rf_length_) - sin_th * (-model_.r_width_/2);
-    polygon_world[1].y() = current_pose.y() + sin_th * (-model_.rf_length_) + cos_th * (-model_.r_width_/2);
+    polygon_world[1].x() = current_pose.x() + cos_th * (-model_.rf_length) - sin_th * (-model_.r_width/2);
+    polygon_world[1].y() = current_pose.y() + sin_th * (-model_.rf_length) + cos_th * (-model_.r_width/2);
     // Rear - RL
-    polygon_world[2].x() = current_pose.x() + cos_th * (-model_.rr_length_) - sin_th * (-model_.r_width_/2);
-    polygon_world[2].y() = current_pose.y() + sin_th * (-model_.rr_length_) + cos_th * (-model_.r_width_/2);
+    polygon_world[2].x() = current_pose.x() + cos_th * (-model_.rr_length) - sin_th * (-model_.r_width/2);
+    polygon_world[2].y() = current_pose.y() + sin_th * (-model_.rr_length) + cos_th * (-model_.r_width/2);
     // Rear - RR
-    polygon_world[3].x() = current_pose.x() + cos_th * (-model_.rr_length_) - sin_th * model_.r_width_/2;
-    polygon_world[4].y() = current_pose.y() + sin_th * (-model_.rr_length_) + cos_th * model_.r_width_/2;
+    polygon_world[3].x() = current_pose.x() + cos_th * (-model_.rr_length) - sin_th * model_.r_width/2;
+    polygon_world[3].y() = current_pose.y() + sin_th * (-model_.rr_length) + cos_th * model_.r_width/2;
   }
 
   Point2dContainer vertices_;
