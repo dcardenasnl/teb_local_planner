@@ -94,8 +94,10 @@ void lrKeyPointGraph::createGraph(const PoseSE2& start, const PoseSE2& goal, dou
 {
   // Clear existing graph and paths
   clearGraph();
+
   if((int)hcp_->getTrajectoryContainer().size() >= cfg_->hcp.max_number_classes)
     return;
+    
   // Direction-vector between start and goal and normal-vector:
   Eigen::Vector2d diff = goal.position()-start.position();
 

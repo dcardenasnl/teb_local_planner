@@ -325,6 +325,10 @@ public:
    * @see setVisualization
    */
   virtual void visualize();
+
+  virtual void visualize(const double steering_pos);
+
+  virtual void visualizeFootprintModel(const PoseSE2& current_pose);
   
   //@}
   

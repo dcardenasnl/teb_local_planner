@@ -160,6 +160,11 @@ public:
   virtual void visualize()
   {
   }
+
+  virtual void visualize(const double steering_pos)
+  {
+    visualize();
+  }
   
   virtual void updateRobotModel(RobotFootprintModelPtr robot_model)
   {
@@ -196,8 +201,8 @@ public:
    * @brief Returns true if the planner has diverged.
    */
   virtual bool hasDiverged() const = 0;
-                
-};
+
+};  // End class
 
 //! Abbrev. for shared instances of PlannerInterface or it's subclasses 
 typedef boost::shared_ptr<PlannerInterface> PlannerInterfacePtr;

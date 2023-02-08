@@ -469,7 +469,9 @@ private:
   bool initialized_; //!< Keeps track about the correct initialization of this class
 
   ros::Publisher goal_info_pub;
+
   ros::Subscriber lhd_articulation_sub_;
+  double steering_pos_;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

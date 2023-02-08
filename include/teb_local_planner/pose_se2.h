@@ -232,7 +232,7 @@ public:
     pose.position.x = _position.x();
     pose.position.y = _position.y();
     pose.position.z = 0;
-    pose.orientation = tf::createQuaternionMsgFromYaw(_theta+_steering_pos);
+    pose.orientation = tf::createQuaternionMsgFromYaw(_theta-_steering_pos); // Use neg to ref to rear pose
   }
   
   /**

@@ -816,9 +816,6 @@ public:
     */
   virtual void visualizeRobot(const PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const
   {
-    Eigen::Vector2d dirRear = current_pose.orientationUnitVec();
-    Eigen::Vector2d dirFront = current_pose.steerPosUnitVec();
-
     if (model_.ff_length>0  && model_.fr_length>0 && model_.f_width>0)
     {
       markers.push_back(visualization_msgs::Marker());

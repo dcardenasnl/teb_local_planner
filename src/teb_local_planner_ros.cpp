@@ -185,6 +185,7 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     via_points_sub_ = nh.subscribe("via_points", 1, &TebLocalPlannerROS::customViaPointsCB, this);
 
     lhd_articulation_sub_ = nh.subscribe("/MACHIENE/articulation_angle", 1, &TebLocalPlannerROS::customMachineState, this);
+    steering_pos_ = 0;
     
     // initialize failure detector
     ros::NodeHandle nh_move_base("~");
@@ -464,7 +465,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   last_cmd_ = cmd_vel.twist;
   
   // Now visualize everything    
-  planner_->visualize();
+  planner_->visualize(steering_pos_);
   visualization_->publishObstacles(obstacles_, costmap_->getResolution());
   visualization_->publishViaPoints(via_points_);
   visualization_->publishGlobalPlan(global_plan_);
@@ -1086,6 +1087,7 @@ void TebLocalPlannerROS::customViaPointsCB(const nav_msgs::Path::ConstPtr& via_p
 
 void TebLocalPlannerROS::customMachineState(const std_msgs::Float64::ConstPtr& articulation_angle)
 {
+  steering_pos_ = articulation_angle->data;
   return;
 }
      

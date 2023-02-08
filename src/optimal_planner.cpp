@@ -116,37 +116,28 @@ void TebOptimalPlanner::setVisualization(TebVisualizationPtr visualization)
   visualization_ = visualization;
 }
 
+void TebOptimalPlanner::visualize(const double steering_pos)
+{
+  // ROS_INFO_THROTTLE(1.0, "Visualize wiht steering pos = %.3f", steering_pos);
+  teb_.Pose(0).addSteeringPose(steering_pos);
+  visualize();
+}
+
 void TebOptimalPlanner::visualize()
 {
   if (!visualization_)
     return;
  
   visualization_->publishLocalPlanAndPoses(teb_);
-  
-  if (teb_.sizePoses() > 1)
-  {
-    PoseSE2 pose = teb_.Pose(0);
-    double vx, vy, omega;
-    extractVelocity(teb_.Pose(0), teb_.Pose(1), teb_.TimeDiff(0), vx, vy, omega);
-
-    double v = sqrt(vx*vx + vy*vy);
-    if (omega!=0 && v!=0)
-    {
-      double radius = v/omega;
-      if (fabs(radius) < cfg_->robot.min_turning_radius)
-        radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
-      omega = std::atan(cfg_->robot.wheelbase / radius);
-    }
-
-    ROS_INFO("Omega = %.3f", omega);
-
-    pose.addSteeringPose(omega);
-    visualization_->publishRobotFootprintModel(pose, *robot_model_);
-  }
-  
-  if (cfg_->trajectory.publish_feedback)
+  visualization_->publishRobotFootprintModel(teb_.Pose(0), *robot_model_);
+   if (cfg_->trajectory.publish_feedback)
     visualization_->publishFeedbackMessage(*this, *obstacles_);
  
+}
+
+void TebOptimalPlanner::visualizeFootprintModel(const PoseSE2& current_pose)
+{
+  visualization_->publishRobotFootprintModel(current_pose, *robot_model_);
 }
 
 
