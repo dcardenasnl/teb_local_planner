@@ -183,6 +183,8 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
 
     // setup callback for custom via-points
     via_points_sub_ = nh.subscribe("via_points", 1, &TebLocalPlannerROS::customViaPointsCB, this);
+
+    lhd_articulation_sub_ = nh.subscribe("/MACHIENE/articulation_angle", 1, &TebLocalPlannerROS::customMachineState, this);
     
     // initialize failure detector
     ros::NodeHandle nh_move_base("~");
@@ -313,7 +315,6 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx);
   
-    
   // Return false if the transformed global plan is empty
   if (transformed_plan.empty())
   {
@@ -1081,6 +1082,11 @@ void TebLocalPlannerROS::customViaPointsCB(const nav_msgs::Path::ConstPtr& via_p
     via_points_.emplace_back(pose.pose.position.x, pose.pose.position.y);
   }
   custom_via_points_active_ = !via_points_.empty();
+}
+
+void TebLocalPlannerROS::customMachineState(const std_msgs::Float64::ConstPtr& articulation_angle)
+{
+  return;
 }
      
 RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(const ros::NodeHandle& nh, const TebConfig& config)

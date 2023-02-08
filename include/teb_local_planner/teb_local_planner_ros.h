@@ -57,6 +57,7 @@
 #include <teb_local_planner/recovery_behaviors.h>
 
 // message types
+#include <std_msgs/Float64.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -283,6 +284,8 @@ protected:
     */
   void customViaPointsCB(const nav_msgs::Path::ConstPtr& via_points_msg);
 
+  void customMachineState(const std_msgs::Float64::ConstPtr& articulation_angle);
+
    /**
     * @brief Prune global plan such that already passed poses are cut off
     * 
@@ -466,6 +469,7 @@ private:
   bool initialized_; //!< Keeps track about the correct initialization of this class
 
   ros::Publisher goal_info_pub;
+  ros::Subscriber lhd_articulation_sub_;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
