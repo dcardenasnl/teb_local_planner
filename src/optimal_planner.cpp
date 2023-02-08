@@ -198,6 +198,7 @@ boost::shared_ptr<g2o::SparseOptimizer> TebOptimalPlanner::initOptimizer()
 bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards,
                                     double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost)
 {
+
   if (cfg_->optim.optimization_activate==false) 
     return false;
   
@@ -289,8 +290,9 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped>& init
     setVelocityGoalFree();
   else
     vel_goal_.first = true; // we just reactivate and use the previously set velocity (should be zero if nothing was modified)
-  
+
   bool result = optimizeTEB(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
+  
   return result;
 }
 
@@ -305,6 +307,7 @@ bool TebOptimalPlanner::plan(const tf::Pose& start, const tf::Pose& goal, const 
 bool TebOptimalPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const geometry_msgs::Twist* start_vel, bool free_goal_vel)
 {	
   ROS_ASSERT_MSG(initialized_, "Call initialize() first.");
+  ROS_INFO("TEB Plan");
   if (!teb_.isInit())
   {
     // init trajectory
@@ -508,7 +511,7 @@ void TebOptimalPlanner::AddEdgesObstacles(double weight_multiplier)
       ObstaclePtr right_obstacle;
       
       const Eigen::Vector2d pose_orient = teb_.Pose(i).orientationUnitVec();
-      
+
       // iterate obstacles
       for (const ObstaclePtr& obst : *obstacles_)
       {

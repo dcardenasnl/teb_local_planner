@@ -412,6 +412,17 @@ protected:
     return;
   }
 
+  void printTransformedPlan(const std::vector<geometry_msgs::PoseStamped>& transformed_plan)
+  {
+    int counter = 0;
+    ROS_INFO("<< Trasnformed Plan >>>");
+    for(const geometry_msgs::PoseStamped& pose: transformed_plan)
+    {
+      ROS_INFO("i=%d, Pose=%.3f, %.3f. Heading=%.3f", counter, pose.pose.position.x, pose.pose.position.y, tf2::getYaw(pose.pose.orientation));
+      counter++;
+    }
+  }
+
 
   
 private:

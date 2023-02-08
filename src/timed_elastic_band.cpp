@@ -388,7 +388,7 @@ bool TimedElasticBand::initTrajectoryToGoal(const PoseSE2& start, const PoseSE2&
 
 bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::PoseStamped>& plan, double max_vel_x, double max_vel_theta, bool estimate_orient, int min_samples, bool guess_backwards_motion)
 {
-  
+  ROS_INFO("initTrajectoryToGoal");
   if (!isInit())
   {
     PoseSE2 start(plan.front().pose);
@@ -399,6 +399,9 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
     
     addPose(start); // add starting point with given orientation
     setPoseVertexFixed(0,true); // StartConf is a fixed constraint during optimization
+
+    // ROS_INFO("Start: %.3f, %.3f", Pose(0).x, Pose(0).y);
+    ROS_INFO("i=0, Position: %.3f, %.3f, theta=%.3f, s=%.3f", Pose(0).x(), Pose(0).y(), Pose(0).theta(), Pose(0).steering_pos());
 
     bool backwards = false;
     if (guess_backwards_motion && (goal.position()-start.position()).dot(start.orientationUnitVec()) < 0) // check if the goal is behind the start pose (w.r.t. start orientation)
@@ -424,6 +427,7 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
         PoseSE2 intermediate_pose(plan[i].pose.position.x, plan[i].pose.position.y, yaw);
         double dt = estimateDeltaT(BackPose(), intermediate_pose, max_vel_x, max_vel_theta);
         addPoseAndTimeDiff(intermediate_pose, dt);
+        ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f", i, Pose(i).x(), Pose(i).y(), Pose(i).theta(), Pose(i).steering_pos());
     }
     
     // if number of samples is not larger than min_samples, insert manually
@@ -443,6 +447,8 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
     double dt = estimateDeltaT(BackPose(), goal, max_vel_x, max_vel_theta);
     addPoseAndTimeDiff(goal, dt);
     setPoseVertexFixed(sizePoses()-1,true); // GoalConf is a fixed constraint during optimization
+    int i = sizePoses()-1;
+    ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f", i, Pose(i).x(), Pose(i).y(), Pose(i).theta(), Pose(i).steering_pos());
   }
   else // size!=0
   {
