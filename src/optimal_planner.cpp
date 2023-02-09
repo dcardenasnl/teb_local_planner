@@ -130,8 +130,10 @@ void TebOptimalPlanner::visualize()
  
   visualization_->publishLocalPlanAndPoses(teb_);
   visualization_->publishRobotFootprintModel(teb_.Pose(0), *robot_model_);
-   if (cfg_->trajectory.publish_feedback)
+  if (cfg_->trajectory.publish_feedback)
+  {
     visualization_->publishFeedbackMessage(*this, *obstacles_);
+  }
  
 }
 
@@ -284,6 +286,7 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped>& init
         cfg_->trajectory.min_samples, cfg_->trajectory.allow_init_with_backwards_motion);
     }
   }
+
   if (start_vel)
     setVelocityStart(*start_vel);
   if (free_goal_vel)
@@ -292,7 +295,7 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped>& init
     vel_goal_.first = true; // we just reactivate and use the previously set velocity (should be zero if nothing was modified)
 
   bool result = optimizeTEB(cfg_->optim.no_inner_iterations, cfg_->optim.no_outer_iterations);
-  
+
   return result;
 }
 
@@ -1231,6 +1234,7 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   // start
   TrajectoryPointMsg& start = trajectory.front();
   teb_.Pose(0).toPoseMsg(start.pose);
+  start.steering_pos = teb_.Pose(0).steering_pos();
   start.velocity.linear.z = 0;
   start.velocity.angular.x = start.velocity.angular.y = 0;
   start.velocity.linear.x = vel_start_.second.linear.x;
@@ -1245,6 +1249,7 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   {
     TrajectoryPointMsg& point = trajectory[i];
     teb_.Pose(i).toPoseMsg(point.pose);
+    // point.steering_pos = teb_.Pose(i).steering_pos();
     point.velocity.linear.z = 0;
     point.velocity.angular.x = point.velocity.angular.y = 0;
     double vel1_x, vel1_y, vel2_x, vel2_y, omega1, omega2;
@@ -1255,18 +1260,58 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
     point.velocity.angular.z = 0.5*(omega1+omega2);    
     point.time_from_start.fromSec(curr_time);
     
+    // Calculate steering pose
+    double vel = sqrt(point.velocity.linear.x*point.velocity.linear.x + point.velocity.linear.y*point.velocity.linear.y);
+    double omega = point.velocity.angular.z;
+    double steer_pose;
+    if (omega==0 || vel==0)
+    {
+      steer_pose = 0.0;
+    }
+    else
+    {
+      double radius = vel/omega;
+      if (fabs(radius) < cfg_->robot.min_turning_radius)
+      {
+        radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+      }
+      steer_pose = std::atan(cfg_->robot.wheelbase / radius);
+    }
+    point.steering_pos = steer_pose;
+
+    
     curr_time += teb_.TimeDiff(i);
   }
   
   // goal
   TrajectoryPointMsg& goal = trajectory.back();
   teb_.BackPose().toPoseMsg(goal.pose);
+  goal.steering_pos = teb_.BackPose().steering_pos();
   goal.velocity.linear.z = 0;
   goal.velocity.angular.x = goal.velocity.angular.y = 0;
   goal.velocity.linear.x = vel_goal_.second.linear.x;
   goal.velocity.linear.y = vel_goal_.second.linear.y;
   goal.velocity.angular.z = vel_goal_.second.angular.z;
   goal.time_from_start.fromSec(curr_time);
+
+  // Calculate steering pose
+  double vel = sqrt(goal.velocity.linear.x*goal.velocity.linear.x + goal.velocity.linear.y*goal.velocity.linear.y);
+  double omega = goal.velocity.angular.z;
+  double steer_pose;
+  if (omega==0 || vel==0)
+  {
+    steer_pose = 0.0;
+  }
+  else
+  {
+    double radius = vel/omega;
+    if (fabs(radius) < cfg_->robot.min_turning_radius)
+    {
+      radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+    }
+    steer_pose = std::atan(cfg_->robot.wheelbase / radius);
+  }
+  goal.steering_pos = steer_pose;
 }
 
 

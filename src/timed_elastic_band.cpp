@@ -229,6 +229,7 @@ void TimedElasticBand::autoResize(double dt_ref, double dt_hysteresis, int min_s
   ROS_ASSERT(sizeTimeDiffs() == 0 || sizeTimeDiffs() + 1 == sizePoses());
   /// iterate through all TEB states and add/remove states!
   bool modified = true;
+  
 
   for (int rep = 0; rep < 100 && modified; ++rep) // actually it should be while(), but we want to make sure to not get stuck in some oscillation, hence max 100 repitions.
   {
@@ -394,14 +395,10 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
     PoseSE2 start(plan.front().pose);
     PoseSE2 goal(plan.back().pose);
 
-    // ROS_INFO("Start: %.3f, %.3f", plan.front().pose.position.x, plan.front().pose.position.y);
-    // ROS_INFO("Goal: %.3f, %.3f", plan.back().pose.position.x, plan.back().pose.position.y);
-    
     addPose(start); // add starting point with given orientation
     setPoseVertexFixed(0,true); // StartConf is a fixed constraint during optimization
 
-    // ROS_INFO("Start: %.3f, %.3f", Pose(0).x, Pose(0).y);
-    ROS_INFO("i=0, Position: %.3f, %.3f, theta=%.3f, s=%.3f", Pose(0).x(), Pose(0).y(), Pose(0).theta(), Pose(0).steering_pos());
+    ROS_INFO("i=0, Position: %.3f, %.3f, theta=%.3f, s=%.3f, t=%f", Pose(0).x(), Pose(0).y(), Pose(0).theta(), Pose(0).steering_pos(), 0.0);
 
     bool backwards = false;
     if (guess_backwards_motion && (goal.position()-start.position()).dot(start.orientationUnitVec()) < 0) // check if the goal is behind the start pose (w.r.t. start orientation)
@@ -427,7 +424,7 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
         PoseSE2 intermediate_pose(plan[i].pose.position.x, plan[i].pose.position.y, yaw);
         double dt = estimateDeltaT(BackPose(), intermediate_pose, max_vel_x, max_vel_theta);
         addPoseAndTimeDiff(intermediate_pose, dt);
-        ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f", i, Pose(i).x(), Pose(i).y(), Pose(i).theta(), Pose(i).steering_pos());
+        ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f, dt=%f", i, intermediate_pose.x(), intermediate_pose.y(), intermediate_pose.theta(), intermediate_pose.steering_pos(), dt);
     }
     
     // if number of samples is not larger than min_samples, insert manually
@@ -448,7 +445,7 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
     addPoseAndTimeDiff(goal, dt);
     setPoseVertexFixed(sizePoses()-1,true); // GoalConf is a fixed constraint during optimization
     int i = sizePoses()-1;
-    ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f", i, Pose(i).x(), Pose(i).y(), Pose(i).theta(), Pose(i).steering_pos());
+    ROS_INFO("i=%d, Position: %.3f, %.3f, theta=%.3f, s=%.3f, t=%f", i, goal.x(), goal.y(), goal.theta(), goal.steering_pos(), dt);
   }
   else // size!=0
   {
@@ -456,6 +453,8 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
     ROS_WARN("Number of TEB configurations: %d, Number of TEB timediffs: %d", sizePoses(), sizeTimeDiffs());
     return false;
   }
+
+  ROS_INFO("teb::initTrajectoryToGoal -> initial_plan size %lu. TebPoses = %d", plan.size(), sizePoses());
   
   return true;
 }
