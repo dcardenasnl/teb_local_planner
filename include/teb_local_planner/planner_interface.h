@@ -136,8 +136,7 @@ public:
   virtual bool getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses) const = 0;
   
   //@}
-  
-  
+
   /**
    * @brief Reset the planner.
    */
@@ -164,6 +163,12 @@ public:
   virtual void visualize(const double steering_pos)
   {
     visualize();
+  }
+
+  virtual void setInitialSteeringPos(double steering_pose)
+  {
+    // ROS_INFO("Set initial steering pos to %.3f", steering_pose);
+    start_steering_pose_ = steering_pose;
   }
   
   virtual void updateRobotModel(RobotFootprintModelPtr robot_model)
@@ -201,6 +206,8 @@ public:
    * @brief Returns true if the planner has diverged.
    */
   virtual bool hasDiverged() const = 0;
+
+  double start_steering_pose_;
 
 };  // End class
 

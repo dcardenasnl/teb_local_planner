@@ -119,7 +119,7 @@ void TebOptimalPlanner::setVisualization(TebVisualizationPtr visualization)
 void TebOptimalPlanner::visualize(const double steering_pos)
 {
   // ROS_INFO_THROTTLE(1.0, "Visualize wiht steering pos = %.3f", steering_pos);
-  teb_.Pose(0).addSteeringPose(steering_pos);
+  //teb_.Pose(0).addSteeringPose(steering_pos);
   visualize();
 }
 
@@ -130,6 +130,7 @@ void TebOptimalPlanner::visualize()
  
   visualization_->publishLocalPlanAndPoses(teb_);
   visualization_->publishRobotFootprintModel(teb_.Pose(0), *robot_model_);
+  // estimateSteeringPoses();
   if (cfg_->trajectory.publish_feedback)
   {
     visualization_->publishFeedbackMessage(*this, *obstacles_);
@@ -221,6 +222,8 @@ bool TebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_out
     {
       teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples, fast_mode);
     }
+
+    estimateSteeringPoses(),
 
     success = buildGraph(weight_multiplier);
     if (!success) 
@@ -1119,6 +1122,51 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
     clearGraph();
 }
 
+double TebOptimalPlanner::estimateSteeringPos(int teb_index)
+{
+  int i = teb_index;
+  double vel_x, vel_y, omega;
+  extractVelocity(teb_.Pose(i-1), teb_.Pose(i), teb_.TimeDiff(i-1), vel_x, vel_y, omega);
+
+  // Calculate steering pose
+  // double vel = sqrt(vel_x*vel_x + vel_y*vel_y);
+  return estimateSteeringPos(vel_x, omega);
+
+}
+
+double TebOptimalPlanner::estimateSteeringPos(const double vel, const double omega)
+{
+  double steer_pose;
+  if (omega==0 || vel==0)
+  {
+    return 0.0;
+  }
+  double radius = vel/omega;
+  if (fabs(radius) < cfg_->robot.min_turning_radius)
+  {
+    radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+  }
+  return std::atan(cfg_->robot.wheelbase / radius);
+}
+
+void TebOptimalPlanner::estimateSteeringPoses()
+{
+  // ROS_INFO_THROTTLE(1.0, "estimateSteeringPoses");
+  if (cfg_->robot.max_vel_y == 0) // non-holonomic robot
+  {
+    if ( cfg_->optim.weight_max_vel_x==0 && cfg_->optim.weight_max_vel_theta==0)
+      return; // if weight equals zero skip adding edges!
+
+    int n = teb_.sizePoses();
+
+    teb_.Pose(0).addSteeringPose(start_steering_pose_);
+    for (int i=1; i < n-1; ++i)
+    {
+      teb_.Pose(i).addSteeringPose(estimateSteeringPos(i));
+    }
+    teb_.Pose(n-1).addSteeringPose(estimateSteeringPos(vel_goal_.second.linear.x, vel_goal_.second.angular.z));
+  }
+}
 
 void TebOptimalPlanner::extractVelocity(const PoseSE2& pose1, const PoseSE2& pose2, double dt, double& vx, double& vy, double& omega) const
 {
@@ -1249,6 +1297,7 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   {
     TrajectoryPointMsg& point = trajectory[i];
     teb_.Pose(i).toPoseMsg(point.pose);
+    point.steering_pos = teb_.Pose(i).steering_pos();;
     // point.steering_pos = teb_.Pose(i).steering_pos();
     point.velocity.linear.z = 0;
     point.velocity.angular.x = point.velocity.angular.y = 0;
@@ -1260,25 +1309,24 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
     point.velocity.angular.z = 0.5*(omega1+omega2);    
     point.time_from_start.fromSec(curr_time);
     
-    // Calculate steering pose
-    double vel = sqrt(point.velocity.linear.x*point.velocity.linear.x + point.velocity.linear.y*point.velocity.linear.y);
-    double omega = point.velocity.angular.z;
-    double steer_pose;
-    if (omega==0 || vel==0)
-    {
-      steer_pose = 0.0;
-    }
-    else
-    {
-      double radius = vel/omega;
-      if (fabs(radius) < cfg_->robot.min_turning_radius)
-      {
-        radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
-      }
-      steer_pose = std::atan(cfg_->robot.wheelbase / radius);
-    }
-    point.steering_pos = steer_pose;
-
+    // // Calculate steering pose
+    // double vel = sqrt(point.velocity.linear.x*point.velocity.linear.x + point.velocity.linear.y*point.velocity.linear.y);
+    // double omega = point.velocity.angular.z;
+    // double steer_pose;
+    // if (omega==0 || vel==0)
+    // {
+    //   steer_pose = 0.0;
+    // }
+    // else
+    // {
+    //   double radius = vel/omega;
+    //   if (fabs(radius) < cfg_->robot.min_turning_radius)
+    //   {
+    //     radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+    //   }
+    //   steer_pose = std::atan(cfg_->robot.wheelbase / radius);
+    // }
+    // point.steering_pos = steer_pose;
     
     curr_time += teb_.TimeDiff(i);
   }

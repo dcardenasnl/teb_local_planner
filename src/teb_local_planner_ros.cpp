@@ -237,6 +237,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   geometry_msgs::TwistStamped dummy_velocity, cmd_vel_stamped;
   uint32_t outcome = computeVelocityCommands(dummy_pose, dummy_velocity, cmd_vel_stamped, dummy_message);
   // cmd_vel = cmd_vel_stamped.twist;
+  cmd_vel.angular.z = 0.4;
   return outcome == mbf_msgs::ExePathResult::SUCCESS;
 }
 
@@ -367,6 +368,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
 
   // Now perform the actual planning
 //   bool success = planner_->plan(robot_pose_, robot_goal_, robot_vel_, cfg_.goal_tolerance.free_goal_vel); // straight line init
+  planner_->setInitialSteeringPos(steering_pos_);
   bool success = planner_->plan(transformed_plan, &robot_vel_, cfg_.goal_tolerance.free_goal_vel);
   if (!success)
   {
@@ -1094,6 +1096,7 @@ void TebLocalPlannerROS::customMachineState(const std_msgs::Float64::ConstPtr& a
 RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(const ros::NodeHandle& nh, const TebConfig& config)
 {
   std::string model_name; 
+  ROS_INFO("ns = %s",nh.getNamespace().c_str());
   if (!nh.getParam("footprint_model/type", model_name))
   {
     ROS_INFO("No robot footprint model specified for trajectory optimization. Using point-shaped model.");

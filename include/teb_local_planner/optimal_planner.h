@@ -437,6 +437,10 @@ public:
     computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost);
     cost.push_back( getCurrentCost() );
   }
+
+  double estimateSteeringPos(int teb_index);
+  double estimateSteeringPos(const double vel, const double omega);
+  void estimateSteeringPoses();
   
   /**
    * @brief Access the cost vector.

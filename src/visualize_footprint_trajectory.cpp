@@ -41,6 +41,7 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <visualization_msgs/Marker.h>
 #include <teb_local_planner/FeedbackMsg.h>
+#include <tf2/utils.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -91,7 +92,7 @@ int main( int argc, char** argv )
 void CB_feddback(const teb_local_planner::FeedbackMsgConstPtr& feedback)
 {
   last_trajectory = feedback->trajectories[0].trajectory;
-
+  feedback_sub.shutdown();
 }
 
 // Planning loop
@@ -104,7 +105,11 @@ void CB_mainCycle(const ros::TimerEvent& e)
     return;
   }
 
-  ROS_INFO("i = %u. SteeringPose = %.3f", counter, last_trajectory[counter].steering_pos);
+  ROS_INFO("i = %u. SP = %.3f, H = %.3f, omega=%.3f,v=%.3f", 
+    counter, last_trajectory[counter].steering_pos,
+    tf2::getYaw(last_trajectory[counter].pose.orientation),
+    last_trajectory[counter].velocity.angular.z,
+    last_trajectory[counter].velocity.linear.x);
 
   std_msgs::ColorRGBA color_red = visual->toColorMsg(0.9, 1.0, 0, 0);
   PoseSE2 pose(last_trajectory[counter].pose);
