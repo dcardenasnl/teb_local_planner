@@ -217,6 +217,15 @@ target_link_libraries(test_optim_node
 )
 
 
+add_executable(visualize_footprint_trajectory src/visualize_footprint_trajectory.cpp)
+
+target_link_libraries(visualize_footprint_trajectory
+   teb_local_planner
+   ${EXTERNAL_LIBS}
+   ${catkin_LIBRARIES}
+)
+
+
 #############
 ## Install ##
 #############
