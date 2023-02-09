@@ -108,7 +108,25 @@ public:
 //     vel *= g2o::sign(deltaS[0]*cos(conf1->theta()) + deltaS[1]*sin(conf1->theta())); // consider direction
     vel *= fast_sigmoid( 100 * (deltaS.x()*cos(conf1->theta()) + deltaS.y()*sin(conf1->theta())) ); // consider direction
     
-    const double omega = angle_diff / deltaT->estimate();
+    double omega = angle_diff / deltaT->estimate();
+
+    const bool USE_STEERING_INSTEAD_OMEGA = true;
+    if(USE_STEERING_INSTEAD_OMEGA)
+    {
+      if (omega==0 || vel==0)
+      {
+        omega = 0.0;
+      }
+      else
+      {
+        double radius = vel/omega;
+        // if (fabs(radius) < cfg_->robot.min_turning_radius)  // Comment for enable penalization
+        // {
+        //   radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
+        // }
+        omega = std::atan(cfg_->robot.wheelbase / radius);
+      }
+    }
   
     _error[0] = penaltyBoundToInterval(vel, -cfg_->robot.max_vel_x_backwards, cfg_->robot.max_vel_x,cfg_->optim.penalty_epsilon);
     _error[1] = penaltyBoundToInterval(omega, cfg_->robot.max_vel_theta,cfg_->optim.penalty_epsilon);
