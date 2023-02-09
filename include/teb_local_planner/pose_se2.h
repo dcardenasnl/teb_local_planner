@@ -78,6 +78,7 @@ public:
   {
       _position = position;
       _theta = theta;
+      _steering_pos = 0.0;
   }
   
   /**
@@ -91,6 +92,7 @@ public:
       _position.coeffRef(0) = x;
       _position.coeffRef(1) = y;
       _theta = theta;
+      _steering_pos = 0.0;
   }
   
   /**
@@ -102,6 +104,7 @@ public:
       _position.coeffRef(0) = pose.position.x;
       _position.coeffRef(1) = pose.position.y;
       _theta = tf::getYaw( pose.orientation );
+      _steering_pos = 0.0;
   }
   
   /**
@@ -113,6 +116,7 @@ public:
       _position.coeffRef(0) = pose.getOrigin().getX();
       _position.coeffRef(1) = pose.getOrigin().getY();
       _theta = tf::getYaw( pose.getRotation() );
+      _steering_pos = 0.0;
   }
   
   /**
@@ -123,6 +127,7 @@ public:
   {
       _position = pose._position;
       _theta = pose._theta;
+      _steering_pos  = 0.0;
   }
 	
   ///@}      
