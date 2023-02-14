@@ -98,6 +98,12 @@ void TimedElasticBand::addPose(const Eigen::Ref<const Eigen::Vector2d>& position
   return;
 }
 
+void TimedElasticBand::addObstacleDist(double dist)
+{
+  obstacle_dist_.push_back(dist);
+  return;
+}
+
 void TimedElasticBand::addTimeDiff(double dt, bool fixed)
 {
   ROS_ASSERT_MSG(dt > 0., "Adding a timediff requires a positive dt");
@@ -208,6 +214,11 @@ void TimedElasticBand::clearTimedElasticBand()
   for (TimeDiffSequence::iterator dt_it = timediff_vec_.begin(); dt_it != timediff_vec_.end(); ++dt_it)
     delete *dt_it;
   timediff_vec_.clear();
+}
+
+void TimedElasticBand::clearObstacleDists()
+{
+  obstacle_dist_.clear();
 }
 
 

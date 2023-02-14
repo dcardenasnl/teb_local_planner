@@ -506,13 +506,23 @@ void TebOptimalPlanner::AddEdgesObstacles(double weight_multiplier)
       optimizer_->addEdge(dist_bandpt_obst);
     };
   };
+
+  teb_.obstacleDists().resize(teb_.sizePoses());
     
   // iterate all teb points, skipping the last and, if the EdgeVelocityObstacleRatio edges should not be created, the first one too
   const int first_vertex = cfg_->optim.weight_velocity_obstacle_ratio == 0 ? 1 : 0;
+
+  if(first_vertex == 1)
+  {
+    teb_.obstacleDists()[0] = calculateMinDist(teb_.Pose(0));
+    // ROS_INFO("i=%d. Pose = %.3f, %.3f. min_dist = %.3f", 0, teb_.Pose(0).x(), teb_.Pose(0).y(), teb_.obstacleDists()[0]);
+  }
+
   for (int i = first_vertex; i < teb_.sizePoses() - 1; ++i)
   {    
       double left_min_dist = std::numeric_limits<double>::max();
       double right_min_dist = std::numeric_limits<double>::max();
+      double min_dist = 20.0;
       ObstaclePtr left_obstacle;
       ObstaclePtr right_obstacle;
       
@@ -526,41 +536,65 @@ void TebOptimalPlanner::AddEdgesObstacles(double weight_multiplier)
           continue;
 
           // calculate distance to robot model
-          double dist = robot_model_->calculateDistance(teb_.Pose(i), obst.get());
+        double dist = robot_model_->calculateDistance(teb_.Pose(i), obst.get());
+
+        // ROS_INFO("i=%d, Dist=%.3f. include_dynamic_obstacles = %d. min_obstacle_dist = %.3f. obstacle_association_force_inclusion_factor = %.3f",
+        //   i, dist,
+        //   cfg_->obstacles.include_dynamic_obstacles,
+        //   cfg_->obstacles.min_obstacle_dist, 
+        //   cfg_->obstacles.obstacle_association_force_inclusion_factor
+        // );
           
           // force considering obstacle if really close to the current pose
         if (dist < cfg_->obstacles.min_obstacle_dist*cfg_->obstacles.obstacle_association_force_inclusion_factor)
-          {
-              iter_obstacle->push_back(obst);
-              continue;
-          }
-          // cut-off distance
-          if (dist > cfg_->obstacles.min_obstacle_dist*cfg_->obstacles.obstacle_association_cutoff_factor)
+        {
+            // ROS_INFO("i=%d. dist = %.3f. Dist too near", i, dist);
+            iter_obstacle->push_back(obst);
+            min_dist = std::min(min_dist, dist);
             continue;
+        }
+        // cut-off distance
+        if (dist > cfg_->obstacles.min_obstacle_dist*cfg_->obstacles.obstacle_association_cutoff_factor)
+        {
+          min_dist = std::min(min_dist, dist);
+          continue;
+        }
+
+        // ROS_INFO("i=%d, Dist=%.3f", i, dist);
+        min_dist = std::min(min_dist, dist);
           
           // determine side (left or right) and assign obstacle if closer than the previous one
-          if (cross2d(pose_orient, obst->getCentroid()) > 0) // left
-          {
-              if (dist < left_min_dist)
-              {
-                  left_min_dist = dist;
-                  left_obstacle = obst;
-              }
-          }
-          else
-          {
-              if (dist < right_min_dist)
-              {
-                  right_min_dist = dist;
-                  right_obstacle = obst;
-              }
-          }
-      }   
-      
+        if (cross2d(pose_orient, obst->getCentroid()) > 0) // left
+        {
+            if (dist < left_min_dist)
+            {
+                left_min_dist = dist;
+                left_obstacle = obst;
+            }
+        }
+        else
+        {
+            if (dist < right_min_dist)
+            {
+                right_min_dist = dist;
+                right_obstacle = obst;
+            }
+        }
+      } // For obstacle
+
       if (left_obstacle)
+      {
+        // ROS_INFO("i=%d. left_min_dist = %.3f", i, left_min_dist);
         iter_obstacle->push_back(left_obstacle);
+      }
       if (right_obstacle)
+      {
+        // ROS_INFO("i=%d. right_min_dist = %.3f", i, right_min_dist);
         iter_obstacle->push_back(right_obstacle);
+      }
+      
+      // ROS_INFO("i=%d. Pose = %.3f, %.3f. min_dist = %.3f", i, teb_.Pose(i).x(), teb_.Pose(i).y(), min_dist);
+      teb_.obstacleDists()[i] = min_dist;
 
       // continue here to ignore obstacles for the first pose, but use them later to create the EdgeVelocityObstacleRatio edges
       if (i == 0)
@@ -571,9 +605,28 @@ void TebOptimalPlanner::AddEdgesObstacles(double weight_multiplier)
 
       // create obstacle edges
       for (const ObstaclePtr obst : *iter_obstacle)
+      {
         create_edge(i, obst.get());
+      }
       ++iter_obstacle;
   }
+  teb_.obstacleDists()[teb_.sizePoses()-1] = calculateMinDist(teb_.Pose(teb_.sizePoses()-1));
+  int i = teb_.sizePoses()-1;
+  // ROS_INFO("i=%d. Pose = %.3f, %.3f. min_dist = %.3f", i, teb_.Pose(i).x(), teb_.Pose(i).y(), teb_.obstacleDists()[i]);
+}
+
+double TebOptimalPlanner::calculateMinDist(PoseSE2& pose) const
+{
+  double min_dist = 20.0;
+  for (const ObstaclePtr& obst : *obstacles_)
+  {
+    if(cfg_->obstacles.include_dynamic_obstacles && obst->isDynamic())
+      continue;
+
+    double dist = robot_model_->calculateDistance(pose, obst.get());
+    min_dist = std::min(min_dist, dist);
+  } // For obstacle
+  return min_dist;
 }
 
 
@@ -1289,7 +1342,16 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   start.velocity.linear.y = vel_start_.second.linear.y;
   start.velocity.angular.z = vel_start_.second.angular.z;
   start.time_from_start.fromSec(curr_time);
-  
+  start.obtacle_distance = teb_.obstacleDists()[0];
+  // {
+  //   int i = 0;
+  //   ROS_INFO("i=%d. Dist=%.3f", i, teb_.obstacleDists()[i]);
+  // }
+  // {
+  //   auto pose = teb_.Pose(0);
+  //   start.obtacle_distance = calculateMinDist(pose);
+  // }
+
   curr_time += teb_.TimeDiff(0);
   
   // intermediate points
@@ -1308,25 +1370,14 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
     point.velocity.linear.y = 0.5*(vel1_y+vel2_y);
     point.velocity.angular.z = 0.5*(omega1+omega2);    
     point.time_from_start.fromSec(curr_time);
-    
-    // // Calculate steering pose
-    // double vel = sqrt(point.velocity.linear.x*point.velocity.linear.x + point.velocity.linear.y*point.velocity.linear.y);
-    // double omega = point.velocity.angular.z;
-    // double steer_pose;
-    // if (omega==0 || vel==0)
     // {
-    //   steer_pose = 0.0;
+    //   ROS_INFO("i=%d. Dist=%.3f", i, teb_.obstacleDists()[i]);
     // }
-    // else
+    point.obtacle_distance = teb_.obstacleDists()[i];
     // {
-    //   double radius = vel/omega;
-    //   if (fabs(radius) < cfg_->robot.min_turning_radius)
-    //   {
-    //     radius = double(g2o::sign(radius)) * cfg_->robot.min_turning_radius; 
-    //   }
-    //   steer_pose = std::atan(cfg_->robot.wheelbase / radius);
+    //   auto pose = teb_.Pose(i);
+    //   start.obtacle_distance = calculateMinDist(pose);
     // }
-    // point.steering_pos = steer_pose;
     
     curr_time += teb_.TimeDiff(i);
   }
@@ -1341,6 +1392,15 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   goal.velocity.linear.y = vel_goal_.second.linear.y;
   goal.velocity.angular.z = vel_goal_.second.angular.z;
   goal.time_from_start.fromSec(curr_time);
+  // {
+  //   int i = teb_.sizePoses()-1;
+  //   ROS_INFO("i=%d. Dist=%.3f", i, teb_.obstacleDists()[i]);
+  // }
+  goal.obtacle_distance = teb_.obstacleDists()[teb_.sizePoses()-1];
+  // {
+  //   auto pose = teb_.Pose(teb_.sizePoses()-1);
+  //   start.obtacle_distance = calculateMinDist(pose);
+  // }  
 
   // Calculate steering pose
   double vel = sqrt(goal.velocity.linear.x*goal.velocity.linear.x + goal.velocity.linear.y*goal.velocity.linear.y);

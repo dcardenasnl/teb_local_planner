@@ -782,6 +782,43 @@ public:
     Point2dContainer rear_polygon;
     transformToWorldFront(current_pose, front_polygon);
     transformToWorldRear(current_pose, rear_polygon);
+    Eigen::Vector2d current_pose_position = current_pose.position();
+    Eigen::Vector2d obstacle_point = obstacle->getCentroid();
+    Eigen::Vector2d diff;
+    diff.x() = (obstacle_point.x()-current_pose.x());
+    diff.y() = (obstacle_point.y()-current_pose.y());
+    // Front
+    {
+      Eigen::Vector2d obstacle_point_transformed_front = obstacle->getCentroid();
+      double cos_th = std::cos(current_pose.theta());
+      double sin_th = std::sin(current_pose.theta());
+      obstacle_point_transformed_front.x() = cos_th * (diff.x()) + sin_th * (diff.x());
+      obstacle_point_transformed_front.y() = - sin_th * (diff.y()) + cos_th * (diff.y());
+      if(obstacle_point_transformed_front.x() >= model_.fr_length &&
+          obstacle_point_transformed_front.x() <= model_.ff_length &&
+          obstacle_point_transformed_front.y() >= -model_.f_width/2 &&
+          obstacle_point_transformed_front.y() <= model_.f_width/2
+          )
+      {
+        return 0.0;
+      }
+    }
+    // Rear
+    {
+      Eigen::Vector2d obstacle_point_transformed_rear = obstacle->getCentroid();
+      double cos_th = std::cos(current_pose.theta()+current_pose.steering_pos());
+      double sin_th = std::sin(current_pose.theta()+current_pose.steering_pos());
+      obstacle_point_transformed_rear.x() = cos_th * (diff.x()) + sin_th * (diff.x());
+      obstacle_point_transformed_rear.y() = - sin_th * (diff.y()) + cos_th * (diff.y());
+      if(obstacle_point_transformed_rear.x() >= model_.rr_length &&
+        obstacle_point_transformed_rear.x() <= model_.rf_length &&
+        obstacle_point_transformed_rear.y() >= -model_.r_width/2 &&
+        obstacle_point_transformed_rear.y() <= model_.r_width/2
+        )
+      {
+        return 0.0;
+      }
+    }
     double min_dist_front = obstacle->getMinimumDistance(front_polygon);
     double min_dist_rear = obstacle->getMinimumDistance(rear_polygon);
     return std::min(min_dist_front, min_dist_rear);

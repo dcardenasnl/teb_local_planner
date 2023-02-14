@@ -107,12 +107,16 @@ public:
    * @return reference to the pose sequence
    */
   PoseSequence& poses() {return pose_vec_;};
-  
+
    /**
    * @brief Access the complete pose sequence (read-only)
    * @return const reference to the pose sequence
    */
   const PoseSequence& poses() const {return pose_vec_;};
+
+  std::vector<double>& obstacleDists() {return obstacle_dist_;}; 
+
+  const std::vector<double>& obstacleDists() const {return obstacle_dist_;}; 
   
   /**
    * @brief Access the complete timediff sequence 
@@ -242,6 +246,8 @@ public:
    * @param fixed Mark the pose to be fixed or unfixed during trajectory optimization (important for the TebOptimalPlanner)
    */
   void addPose(double x, double y, double theta, bool fixed=false);
+
+  void addObstacleDist(double dist);
   
   /**
    * @brief Append a new time difference vertex to the back of the time diff sequence 
@@ -525,6 +531,8 @@ public:
    * The pose and timediff sequences will be empty and isInit() will return \c false
    */
   void clearTimedElasticBand();
+
+  void clearObstacleDists();
   
   //@}
   
@@ -644,6 +652,8 @@ public:
 protected:
   PoseSequence pose_vec_; //!< Internal container storing the sequence of optimzable pose vertices
   TimeDiffSequence timediff_vec_;  //!< Internal container storing the sequence of optimzable timediff vertices
+  
+  std::vector<double> obstacle_dist_;
   
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

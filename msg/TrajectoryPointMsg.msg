@@ -17,6 +17,7 @@ geometry_msgs/Twist acceleration
 
 duration time_from_start
 float32 steering_pos
+float32 obtacle_distance
 
 
 

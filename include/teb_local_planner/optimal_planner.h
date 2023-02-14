@@ -614,6 +614,8 @@ protected:
    * @param weight_multiplier Specify an additional weight multipler (in addition to the the config weight)
    */
   void AddEdgesObstacles(double weight_multiplier=1.0);
+
+  double calculateMinDist(PoseSE2& pose) const;
   
   /**
    * @brief Add all edges (local cost functions) related to keeping a distance from static obstacles (legacy association strategy)
