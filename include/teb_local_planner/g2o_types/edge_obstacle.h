@@ -102,6 +102,8 @@ public:
       _error[0] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[0] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
     }
 
+    ROS_INFO("Dis=%.3f, error=%.3f. ", dist, _error[0]);
+
     ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeObstacle::computeError() _error[0]=%f\n",_error[0]);
   }
 
