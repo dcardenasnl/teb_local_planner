@@ -102,8 +102,6 @@ public:
       _error[0] = cfg_->obstacles.min_obstacle_dist * std::pow(_error[0] / cfg_->obstacles.min_obstacle_dist, cfg_->optim.obstacle_cost_exponent);
     }
 
-    ROS_INFO("Dis=%.3f, error=%.3f. ", dist, _error[0]);
-
     ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeObstacle::computeError() _error[0]=%f\n",_error[0]);
   }
 
@@ -247,6 +245,10 @@ public:
     // Additional linear inflation cost
     _error[1] = penaltyBoundFromBelow(dist, cfg_->obstacles.inflation_dist, 0.0);
 
+    // if(dist < 0.2)
+    // {
+    //   ROS_INFO("Dis=%.3f. error=[0]=%.3f. error=[1]=%.3f, obstacle_cost_exponent=%.3f. min_obstacle_dist=%.3f", dist, _error[0], _error[1], cfg_->optim.obstacle_cost_exponent, cfg_->obstacles.min_obstacle_dist);
+    // }
 
     ROS_ASSERT_MSG(std::isfinite(_error[0]) && std::isfinite(_error[1]), "EdgeInflatedObstacle::computeError() _error[0]=%f, _error[1]=%f\n",_error[0], _error[1]);
   }
