@@ -83,7 +83,17 @@ int main( int argc, char** argv )
   // Timers
   ros::Timer cycle_timer = n.createTimer(ros::Duration(0.3), CB_mainCycle);
 
-  ros::spin();
+  while(ros::ok())
+  {
+    // ROS_INFO("Press enter to continue. Press e to exit");
+    char c = static_cast<char>(std::getchar());
+    if(c=='e' || c=='q')
+    {
+      ROS_ASSERT_MSG(false, "EXIT");
+      return 0;
+    }
+	  ros::spinOnce();
+  }
 
   return 0;
 }
@@ -105,11 +115,12 @@ void CB_mainCycle(const ros::TimerEvent& e)
     return;
   }
 
-  ROS_INFO("i = %u. SP = %.3f, H = %.3f, omega=%.3f,v=%.3f", 
+  ROS_INFO("i = %u. SP = %.3f, H = %.3f, omega=%.3f,v=%.3f. mindist=%.3f", 
     counter, last_trajectory[counter].steering_pos,
     tf2::getYaw(last_trajectory[counter].pose.orientation),
     last_trajectory[counter].velocity.angular.z,
-    last_trajectory[counter].velocity.linear.x);
+    last_trajectory[counter].velocity.linear.x,
+    last_trajectory[counter].obtacle_distance);
 
   std_msgs::ColorRGBA color_red = visual->toColorMsg(0.9, 1.0, 0, 0);
   PoseSE2 pose(last_trajectory[counter].pose);
