@@ -115,11 +115,11 @@ void CB_mainCycle(const ros::TimerEvent& e)
     return;
   }
 
-  ROS_INFO("i = %u. SP = %.3f, H = %.3f, omega=%.3f,v=%.3f. mindist=%.3f", 
+  ROS_INFO("i=%u. SP=%.3f, H=%.3f, Pos=%.3f, %.3f. mindist=%.3f", 
     counter, last_trajectory[counter].steering_pos,
     tf2::getYaw(last_trajectory[counter].pose.orientation),
-    last_trajectory[counter].velocity.angular.z,
-    last_trajectory[counter].velocity.linear.x,
+    last_trajectory[counter].pose.position.x,
+    last_trajectory[counter].pose.position.y,
     last_trajectory[counter].obtacle_distance);
 
   std_msgs::ColorRGBA color_red = visual->toColorMsg(0.9, 1.0, 0, 0);

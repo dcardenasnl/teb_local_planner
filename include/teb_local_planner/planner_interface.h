@@ -207,6 +207,11 @@ public:
    */
   virtual bool hasDiverged() const = 0;
 
+  virtual double calculateMinDist(PoseSE2& pose) const
+  {
+    return 0.0;
+  }
+
   double start_steering_pose_;
 
 };  // End class

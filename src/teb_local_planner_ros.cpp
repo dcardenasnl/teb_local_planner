@@ -361,7 +361,13 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
-  
+
+  // PoseSE2 initial_pose(robot_pose_);
+  // initial_pose.addSteeringPose(steering_pos_);
+  // const double dist = planner_->calculateMinDist(initial_pose);
+  // ROS_INFO("Initial %.3f, %.3f, %.3f, %.3f. Pose dist = %.3f", initial_pose.x(), initial_pose.y(), initial_pose.theta(), initial_pose.steering_pos(), dist);
+  // visualization_->publishObstacles(obstacles_, costmap_->getResolution());
+  // return true;
     
   // Do not allow config changes during the following optimization step
   boost::mutex::scoped_lock cfg_lock(cfg_.configMutex());
@@ -465,6 +471,7 @@ uint32_t TebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::PoseSt
   
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel.twist;
+
   
   // Now visualize everything    
   planner_->visualize(steering_pos_);

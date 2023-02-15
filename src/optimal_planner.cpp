@@ -624,7 +624,12 @@ double TebOptimalPlanner::calculateMinDist(PoseSE2& pose) const
       continue;
 
     double dist = robot_model_->calculateDistance(pose, obst.get());
-    min_dist = std::min(min_dist, dist);
+
+    // min_dist = std::min(min_dist, dist);
+    if(dist < min_dist)
+    {
+      min_dist = dist;
+    }
   } // For obstacle
   return min_dist;
 }
