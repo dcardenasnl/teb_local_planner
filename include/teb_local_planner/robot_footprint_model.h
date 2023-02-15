@@ -778,6 +778,8 @@ public:
     */
   virtual double calculateDistance(const PoseSE2& current_pose, const Obstacle* obstacle) const
   {
+    // bool debug_msg = obstacle->getCentroid().x()>13 && obstacle->getCentroid().x()<15 && obstacle->getCentroid().y()>29 && obstacle->getCentroid().y()<32;
+    bool debug_msg = false;
     Point2dContainer front_polygon;
     Point2dContainer rear_polygon;
     transformToWorldFront(current_pose, front_polygon);
@@ -787,41 +789,53 @@ public:
     Eigen::Vector2d diff;
     diff.x() = (obstacle_point.x()-current_pose.x());
     diff.y() = (obstacle_point.y()-current_pose.y());
-    // Front
+    ROS_INFO_COND(debug_msg, "    current_pose_position = %.3f, %.3f. %.3f, %.3f", current_pose_position.x(), current_pose_position.y(), current_pose.theta(), current_pose.steering_pos());
+    ROS_INFO_COND(debug_msg, "    diff = %.3f, %.3f", diff.x(), diff.y());
+    ROS_INFO_COND(debug_msg, "    obstacle_point = %.3f, %.3f", obstacle_point.x(), obstacle_point.y());
+    // obstacle_point
     {
       Eigen::Vector2d obstacle_point_transformed_front = obstacle->getCentroid();
       double cos_th = std::cos(current_pose.theta());
       double sin_th = std::sin(current_pose.theta());
-      obstacle_point_transformed_front.x() = cos_th * (diff.x()) + sin_th * (diff.x());
-      obstacle_point_transformed_front.y() = - sin_th * (diff.y()) + cos_th * (diff.y());
+      obstacle_point_transformed_front.x() = cos_th * (diff.x()) + sin_th * (diff.y());
+      obstacle_point_transformed_front.y() = - sin_th * (diff.x()) + cos_th * (diff.y());
+      ROS_INFO_COND(debug_msg, "    FRONT: obstacle_point_transformed_front = %.3f, %.3f", obstacle_point_transformed_front.x(), obstacle_point_transformed_front.y());
       if(obstacle_point_transformed_front.x() >= model_.fr_length &&
           obstacle_point_transformed_front.x() <= model_.ff_length &&
           obstacle_point_transformed_front.y() >= -model_.f_width/2 &&
           obstacle_point_transformed_front.y() <= model_.f_width/2
           )
       {
+        ROS_INFO_COND(debug_msg, "    FRONT COLLISION: theta, steering_pos = %.3f, %.3f", current_pose.theta(), current_pose.steering_pos());
+        ROS_INFO_COND(debug_msg, "    FRONT COLLISION: cos_th, sin_th = %.3f, %.3f", cos_th, sin_th);
         return 0.0;
       }
     }
     // Rear
     {
       Eigen::Vector2d obstacle_point_transformed_rear = obstacle->getCentroid();
-      double cos_th = std::cos(current_pose.theta()+current_pose.steering_pos());
-      double sin_th = std::sin(current_pose.theta()+current_pose.steering_pos());
-      obstacle_point_transformed_rear.x() = cos_th * (diff.x()) + sin_th * (diff.x());
-      obstacle_point_transformed_rear.y() = - sin_th * (diff.y()) + cos_th * (diff.y());
-      if(obstacle_point_transformed_rear.x() >= model_.rr_length &&
-        obstacle_point_transformed_rear.x() <= model_.rf_length &&
+      double cos_th = std::cos(current_pose.theta()-current_pose.steering_pos());
+      double sin_th = std::sin(current_pose.theta()-current_pose.steering_pos());
+      obstacle_point_transformed_rear.x() = cos_th * (diff.x()) + sin_th * (diff.y());
+      obstacle_point_transformed_rear.y() = - sin_th * (diff.x()) + cos_th * (diff.y());
+      ROS_INFO_COND(debug_msg, "    REAR: obstacle_point_transformed_rear = %.3f, %.3f", obstacle_point_transformed_rear.x(), obstacle_point_transformed_rear.y());
+      if(obstacle_point_transformed_rear.x() >= -model_.rr_length &&
+        obstacle_point_transformed_rear.x() <= -model_.rf_length &&
         obstacle_point_transformed_rear.y() >= -model_.r_width/2 &&
         obstacle_point_transformed_rear.y() <= model_.r_width/2
         )
       {
+        ROS_INFO_COND(debug_msg, "    REAR COLLISION: obstacle_point_transformed_rear = %.3f, %.3f", obstacle_point_transformed_rear.x(), obstacle_point_transformed_rear.y());
+        ROS_INFO_COND(debug_msg, "    REAR COLLISION: theta, steering_pos = %.3f, %.3f", current_pose.theta(), current_pose.steering_pos());
+        ROS_INFO_COND(debug_msg, "    REAR COLLISION: cos_th, sin_th = %.3f, %.3f", cos_th, sin_th);
         return 0.0;
       }
     }
     double min_dist_front = obstacle->getMinimumDistance(front_polygon);
     double min_dist_rear = obstacle->getMinimumDistance(rear_polygon);
-    return std::min(min_dist_front, min_dist_rear);
+    double min_dist = std::min(min_dist_front, min_dist_rear);
+    ROS_INFO_COND(debug_msg, "    MINDIST: %.3f", min_dist);
+    return min_dist;
   }
 
   /**
@@ -949,8 +963,8 @@ private:
     */
   void transformToWorldFront(const PoseSE2& current_pose, Point2dContainer& polygon_world) const
   {
-    double cos_th = std::cos(current_pose.theta()+current_pose.steering_pos());
-    double sin_th = std::sin(current_pose.theta()+current_pose.steering_pos());
+    double cos_th = std::cos(current_pose.theta());
+    double sin_th = std::sin(current_pose.theta());
 
     polygon_world.resize(4);
     // Front - FR
@@ -974,8 +988,8 @@ private:
     */
   void transformToWorldRear(const PoseSE2& current_pose, Point2dContainer& polygon_world) const
   {
-    double cos_th = std::cos(current_pose.theta());
-    double sin_th = std::sin(current_pose.theta());
+    double cos_th = std::cos(current_pose.theta()-current_pose.steering_pos());
+    double sin_th = std::sin(current_pose.theta()-current_pose.steering_pos());
 
     polygon_world.resize(4);
     // Rear - FR
